@@ -20,6 +20,6 @@
 
     <modules>
         <module>executor-service-services</module>
-        <module>executor-service-repositories</module>
+        <module>executor-service-code-runner</module>
     </modules>
 </project>

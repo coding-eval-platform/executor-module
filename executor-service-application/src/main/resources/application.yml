@@ -7,6 +7,21 @@ spring:
     main:
         banner-mode: "off"
 
+code-runner:
+    pre-run:
+        command: "echo"
+        args:
+            - "\"Pre-run is Working!\""
+        timeout: 10000
+        continue-on-non-zero-exit-code: false
+    runner:
+        command: "echo"
+        args:
+            - "\"Runner is Working!\""
+        default-timeout: 10000
+    base-working-directory: "/tmp"
+
+
 ---
 # Configuration for Development Environment
 

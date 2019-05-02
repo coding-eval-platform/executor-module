@@ -6,11 +6,11 @@
 
     <parent>
         <groupId>ar.edu.itba.cep</groupId>
-        <artifactId>executor-service-core</artifactId>
+        <artifactId>executor-service-adapters</artifactId>
         <version>0.0.1-SNAPSHOT</version>
     </parent>
 
-    <artifactId>executor-service-domain</artifactId>
+    <artifactId>executor-service-processes-code-runner</artifactId>
     <name>${project.groupId}:${project.artifactId}</name>
     <packaging>jar</packaging>
 
@@ -19,29 +19,22 @@
     </properties>
 
     <dependencies>
-        <!-- Models -->
         <dependency>
-            <groupId>${project.parent.groupId}</groupId>
-            <artifactId>executor-service-models</artifactId>
-            <version>${project.parent.version}</version>
-        </dependency>
-
-        <!-- Ports -->
-        <dependency>
-            <groupId>${project.parent.groupId}</groupId>
+            <groupId>ar.edu.itba.cep</groupId>
             <artifactId>executor-service-code-runner</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
-        <dependency>
-            <groupId>${project.parent.groupId}</groupId>
-            <artifactId>executor-service-services</artifactId>
-            <version>${project.parent.version}</version>
-        </dependency>
 
-        <!-- Third party libraries-->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter</artifactId>
+        </dependency>
+
+        <!-- Spring Boot Custom properties -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-configuration-processor</artifactId>
+            <optional>true</optional>
         </dependency>
     </dependencies>
 </project>
