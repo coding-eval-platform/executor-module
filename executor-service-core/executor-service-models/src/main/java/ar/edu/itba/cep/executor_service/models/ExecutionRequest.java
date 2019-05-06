@@ -11,11 +11,6 @@ import java.util.Objects;
 public class ExecutionRequest {
 
     /**
-     * The execution request's id.
-     */
-    private final long id;
-
-    /**
      * The code to be run.
      */
     private final String code;
@@ -50,20 +45,12 @@ public class ExecutionRequest {
         assertCode(code);
         assertInputsList(inputs);
         assertLanguage(language);
-        this.id = 0;
         this.code = code;
         this.inputs = inputs;
         this.timeout = timeout;
         this.language = language;
     }
 
-
-    /**
-     * @return The execution request's id.
-     */
-    public long getId() {
-        return id;
-    }
 
     /**
      * @return The code to be run.
@@ -93,6 +80,7 @@ public class ExecutionRequest {
         return language;
     }
 
+
     // ================================
     // equals, hashcode and toString
     // ================================
@@ -105,26 +93,27 @@ public class ExecutionRequest {
         if (!(o instanceof ExecutionRequest)) {
             return false;
         }
-        final var that = (ExecutionRequest) o;
-        return id == that.id;
+        final ExecutionRequest that = (ExecutionRequest) o;
+        return code.equals(that.code) &&
+                inputs.equals(that.inputs) &&
+                Objects.equals(timeout, that.timeout) &&
+                language == that.language;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id);
+        return Objects.hash(code, inputs, timeout, language);
     }
 
     @Override
     public String toString() {
         return "ExecutionRequest{" +
-                "id=" + id +
-                ", code='" + code + '\'' +
+                "code='" + code + '\'' +
                 ", inputs=" + inputs +
                 ", timeout=" + timeout +
                 ", language=" + language +
                 '}';
     }
-
 
     // ================================
     // Assertions

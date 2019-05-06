@@ -7,6 +7,23 @@ spring:
     main:
         banner-mode: "off"
 
+    # TODO: check this stuff
+    kafka:
+        consumer:
+            group-id: "executor_service"
+            auto-offset-reset: earliest
+            key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+            value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+            properties:
+                spring:
+                    json:
+                        use.type.headers: false
+                        value.default.type: com.bellotapps.the_messenger.commons.Message
+        producer:
+            key-serializer: org.apache.kafka.common.serialization.StringSerializer
+            value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+
+
 code-runner:
     pre-run:
         command: "echo"
@@ -22,6 +39,7 @@ code-runner:
     base-working-directory: "/tmp"
 
 
+
 ---
 # Configuration for Development Environment
 
@@ -29,6 +47,10 @@ spring:
     profiles:
         - dev
         - development
+
+    # TODO: check this stuff
+    kafka:
+        bootstrap-servers: localhost:9092
 
 ---
 # Configuration for Staging Environment

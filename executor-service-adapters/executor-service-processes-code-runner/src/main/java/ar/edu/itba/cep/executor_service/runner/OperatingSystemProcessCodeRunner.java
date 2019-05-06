@@ -124,7 +124,7 @@ public class OperatingSystemProcessCodeRunner implements CodeRunner, Initializin
             throws IllegalArgumentException {
         Assert.notNull(executionRequest, "The execution request mut not be null");
         final var workingDirectory = createWorkingDirectory(); // TODO: should we lock the directory?
-        preRun(workingDirectory, executionRequest.getCode());
+        preRun(workingDirectory, executionRequest.getCode()); // TODO: if compiled and failed, then return the corresponding ExecutionResult
         final var timeout = Optional.ofNullable(executionRequest.getTimeout()).orElse(defaultRunnerTimeout);
         return runCode(workingDirectory, executionRequest.getInputs(), timeout).apply(executionRequest);
         // TODO: should we delete the working directory?

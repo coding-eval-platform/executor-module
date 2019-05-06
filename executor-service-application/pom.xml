@@ -34,6 +34,12 @@
         <!-- Adapters -->
         <dependency>
             <groupId>${project.parent.groupId}</groupId>
+            <artifactId>executor-service-kafka-commands-handlers</artifactId>
+            <version>${project.parent.version}</version>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>${project.parent.groupId}</groupId>
             <artifactId>executor-service-processes-code-runner</artifactId>
             <version>${project.parent.version}</version>
             <scope>runtime</scope>
