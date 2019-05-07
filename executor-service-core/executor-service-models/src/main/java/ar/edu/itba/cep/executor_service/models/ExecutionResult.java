@@ -5,7 +5,7 @@ import org.springframework.util.Assert;
 import java.util.Objects;
 
 /**
- * Represents an execution result (i.e exit code, stdout and stderr).
+ * An abstract execution result.
  */
 public abstract class ExecutionResult {
 
@@ -25,6 +25,7 @@ public abstract class ExecutionResult {
         assertExecutionRequest(executionRequest);
         this.executionRequest = executionRequest;
     }
+
 
     /**
      * @return The {@link ExecutionRequest} to which this execution result belongs to.

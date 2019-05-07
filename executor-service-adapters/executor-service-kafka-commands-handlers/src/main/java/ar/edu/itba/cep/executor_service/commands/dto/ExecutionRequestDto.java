@@ -1,5 +1,6 @@
 package ar.edu.itba.cep.executor_service.commands.dto;
 
+import ar.edu.itba.cep.executor_service.models.ExecutionRequest;
 import ar.edu.itba.cep.executor_service.models.Language;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -7,29 +8,14 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 
 /**
- * Data transfer object for receiving execution requests.
+ * Data transfer object for receiving {@link ExecutionRequest}s.
  */
 public class ExecutionRequestDto {
 
     /**
-     * The code to be run.
+     * The {@link ExecutionRequest} that is created from the received JSON.
      */
-    private final String code;
-
-    /**
-     * The input arguments to be passed to the execution.
-     */
-    private final List<String> inputs;
-
-    /**
-     * The time given to execute, in milliseconds..
-     */
-    private final Long timeout;
-
-    /**
-     * The programming language in which the {@link #code} is written.
-     */
-    private final Language language;
+    private final ExecutionRequest executionRequest;
 
 
     /**
@@ -47,38 +33,13 @@ public class ExecutionRequestDto {
             @JsonProperty(value = "inputs", access = JsonProperty.Access.WRITE_ONLY) final List<String> inputs,
             @JsonProperty(value = "timeout", access = JsonProperty.Access.WRITE_ONLY) final Long timeout,
             @JsonProperty(value = "language", access = JsonProperty.Access.WRITE_ONLY) final Language language) {
-        this.code = code;
-        this.inputs = inputs;
-        this.timeout = timeout;
-        this.language = language;
-    }
-
-
-    /**
-     * @return The code to be run.
-     */
-    public String getCode() {
-        return code;
+        this.executionRequest = new ExecutionRequest(code, inputs, timeout, language);
     }
 
     /**
-     * @return The input arguments to be passed to the execution.
+     * @return The {@link ExecutionRequest} that is created from the received JSON.
      */
-    public List<String> getInputs() {
-        return inputs;
-    }
-
-    /**
-     * @return The time given to execute, in milliseconds.
-     */
-    public Long getTimeout() {
-        return timeout;
-    }
-
-    /**
-     * @return The programming language in which the {@link #getCode()} is written.
-     */
-    public Language getLanguage() {
-        return language;
+    public ExecutionRequest getExecutionRequest() {
+        return executionRequest;
     }
 }

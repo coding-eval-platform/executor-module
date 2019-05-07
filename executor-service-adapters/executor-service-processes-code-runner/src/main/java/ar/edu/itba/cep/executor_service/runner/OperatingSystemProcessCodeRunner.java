@@ -230,10 +230,10 @@ public class OperatingSystemProcessCodeRunner implements CodeRunner, Initializin
             // Start the process.
             final var process = processBuilder.start();
             if (executionHasCompleted(process, timeout)) {
-                final var stdOut = readLines(process.getInputStream());
-                final var stdErr = readLines(process.getErrorStream());
+                final var stdout = readLines(process.getInputStream());
+                final var stderr = readLines(process.getErrorStream());
                 final var exitCode = process.exitValue();
-                return req -> new FinishedExecutionResult(exitCode, stdOut, stdErr, req);
+                return req -> new FinishedExecutionResult(exitCode, stdout, stderr, req);
             }
             return TimedOutExecutionResult::new;
         } catch (final IOException e) {

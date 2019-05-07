@@ -1,7 +1,7 @@
 package ar.edu.itba.cep.executor_service.models;
 
 /**
- * Represents an execution result (i.e exit code, stdout and stderr).
+ * Represents an {@link ExecutionResult} that has timed-out.
  */
 public class TimedOutExecutionResult extends ExecutionResult {
 

@@ -2,21 +2,22 @@ package ar.edu.itba.cep.executor_service.domain;
 
 import ar.edu.itba.cep.executor_service.models.ExecutionRequest;
 import ar.edu.itba.cep.executor_service.models.ExecutionResult;
-import ar.edu.itba.cep.executor_service.models.Language;
 import ar.edu.itba.cep.executor_service.runner.CodeRunner;
 import ar.edu.itba.cep.executor_service.services.ExecutorService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
-
 /**
- * Created by Juan Marcos Bellini on 2019-04-12.
+ * A manager in charge of processing {@link ExecutionRequest}s.
  */
 @Service
 public class ExecutionManager implements ExecutorService {
 
+    /**
+     * The {@link CodeRunner} used to process an {@link ExecutionRequest}.
+     */
     private final CodeRunner codeRunner;
+
 
     @Autowired
     public ExecutionManager(
@@ -24,12 +25,9 @@ public class ExecutionManager implements ExecutorService {
         this.codeRunner = codeRunner;
     }
 
+
     @Override
-    public ExecutionResult runCode(
-            final String code,
-            final List<String> inputs,
-            final Long timeout,
-            final Language language) throws IllegalArgumentException {
-        return codeRunner.processExecutionRequest(new ExecutionRequest(code, inputs, timeout, language));
+    public ExecutionResult processExecutionRequest(final ExecutionRequest executionRequest) throws IllegalArgumentException {
+        return codeRunner.processExecutionRequest(executionRequest); // TODO: route according to language
     }
 }

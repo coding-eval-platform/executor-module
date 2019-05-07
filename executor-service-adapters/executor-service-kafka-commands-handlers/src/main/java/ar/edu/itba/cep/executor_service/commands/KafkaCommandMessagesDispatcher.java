@@ -16,21 +16,26 @@ public class KafkaCommandMessagesDispatcher {
     /**
      * The {@link MessageHandler} in charge of dispatching actions based on received messages.
      */
-    private final MessageHandler messageHandler;
+    private final MessageHandler dispatcherMessageHandler;
 
+    /**
+     * @param executionRequestHandler The {@link MessageHandler}
+     *                                in charge of handling execution request command messages.
+     */
     @Autowired
-    public KafkaCommandMessagesDispatcher(final ExecutorServiceAdapter executorServiceAdapter) {
-        this.messageHandler = BuiltInMessageHandler.Builder.create()
+    public KafkaCommandMessagesDispatcher(final MessageHandler executionRequestHandler) {
+        this.dispatcherMessageHandler = BuiltInMessageHandler.Builder.create()
                 .configureTypedMessageHandlers()
                 .configureCommandMessageHandlers()
-                .handleCommandWith("requestExecution", executorServiceAdapter::handleExecutionRequest)
+                .handleCommandWith("requestExecution", executionRequestHandler)
                 .continueWithParentBuilder()
                 .continueWithParentBuilder()
                 .build();
     }
 
+
     /**
-     * Receives a {@link Message}s and delegates it handling to the {@code messageHandler}.
+     * Receives a {@link Message}s and delegates its handling to the {@code dispatcherMessageHandler}.
      *
      * @param message The received {@link Message}.
      */
@@ -39,9 +44,8 @@ public class KafkaCommandMessagesDispatcher {
                     "ExecutorService-Commands",
             },
             autoStartup = "true"
-
     )
     public void dispatch(final Message message) {
-        this.messageHandler.handle(message);
+        this.dispatcherMessageHandler.handle(message);
     }
 }
