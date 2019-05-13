@@ -31,11 +31,19 @@
         </dependency>
         <dependency>
             <groupId>com.bellotapps.the-messenger</groupId>
+            <artifactId>consumer</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.bellotapps.the-messenger</groupId>
+            <artifactId>producer</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.bellotapps.the-messenger</groupId>
             <artifactId>json</artifactId>
         </dependency>
         <dependency>
             <groupId>com.bellotapps.the-messenger</groupId>
-            <artifactId>consumer</artifactId>
+            <artifactId>transport-json-jackson</artifactId>
         </dependency>
 
         <dependency>
@@ -51,6 +59,13 @@
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
+        </dependency>
+
+        <!-- Spring Boot Custom properties -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-configuration-processor</artifactId>
+            <optional>true</optional>
         </dependency>
     </dependencies>
 </project>

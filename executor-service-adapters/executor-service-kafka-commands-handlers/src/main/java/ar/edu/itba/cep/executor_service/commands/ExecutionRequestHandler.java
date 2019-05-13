@@ -1,20 +1,18 @@
 package ar.edu.itba.cep.executor_service.commands;
 
 import ar.edu.itba.cep.executor_service.commands.dto.ExecutionRequestDto;
-import ar.edu.itba.cep.executor_service.models.Language;
+import ar.edu.itba.cep.executor_service.models.ExecutionRequest;
 import ar.edu.itba.cep.executor_service.services.ExecutorService;
 import com.bellotapps.the_messenger.commons.Message;
-import com.bellotapps.the_messenger.commons.data_transfer.Deserializer;
+import com.bellotapps.the_messenger.commons.payload.PayloadDeserializer;
 import com.bellotapps.the_messenger.consumer.DeserializerMessageHandler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.util.List;
-
 /**
  * Adapts an {@link ExecutorService} into the Kafka Command handlers infrastructure.
  * Implemented as a {@link DeserializerMessageHandler} of {@link ExecutionRequestDto} that takes data from the
- * request dto and calls the {@link ExecutorService#runCode(String, List, Long, Language)} method.
+ * request dto and calls the {@link ExecutorService#processExecutionRequest(ExecutionRequest)} method.
  */
 @Component
 public class ExecutionRequestHandler extends DeserializerMessageHandler<ExecutionRequestDto> {
@@ -33,14 +31,14 @@ public class ExecutionRequestHandler extends DeserializerMessageHandler<Executio
     /**
      * Constructor.
      *
-     * @param executionRequestDtoDeserializer A {@link Deserializer} of {@link ExecutionRequestDto}.
+     * @param executionRequestDtoDeserializer A {@link PayloadDeserializer} of {@link ExecutionRequestDto}.
      * @param executorService                 The {@link ExecutorService} being adapted.
      * @param executionResultHandler          An {@link ExecutionRequestHandler}
      *                                        in charge of returning results to the execution requester.
      */
     @Autowired
     public ExecutionRequestHandler(
-            final Deserializer<ExecutionRequestDto> executionRequestDtoDeserializer,
+            final PayloadDeserializer<ExecutionRequestDto> executionRequestDtoDeserializer,
             final ExecutorService executorService,
             final ExecutionResultHandler executionResultHandler) {
         super(executionRequestDtoDeserializer);
