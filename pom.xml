@@ -20,7 +20,7 @@
         <!-- Build -->
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <!-- Versions -->
-        <com.bellotapps.the-messenger.version>0.0.1-SNAPSHOT</com.bellotapps.the-messenger.version>
+        <com.bellotapps.the-messenger.version>0.0.1-RELEASE</com.bellotapps.the-messenger.version>
     </properties>
 
     <modules>
