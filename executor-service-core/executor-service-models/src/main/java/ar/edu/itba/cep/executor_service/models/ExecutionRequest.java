@@ -44,6 +44,7 @@ public class ExecutionRequest {
             throws IllegalArgumentException {
         assertCode(code);
         assertInputsList(inputs);
+        assertTimeout(timeout);
         assertLanguage(language);
         this.code = code;
         this.inputs = inputs;
@@ -138,6 +139,16 @@ public class ExecutionRequest {
     private static void assertInputsList(final List<String> inputs) throws IllegalArgumentException {
         Assert.notNull(inputs, "The inputs list must not be null");
         Assert.isTrue(inputs.stream().noneMatch(Objects::isNull), "The inputs list must not contain nulls.");
+    }
+
+    /**
+     * Asserts that the given {@code timeout} is valid.
+     *
+     * @param timeout The timeout to be checked.
+     * @throws IllegalArgumentException If the {@code timeout} is not valid.
+     */
+    private static void assertTimeout(final Long timeout) throws IllegalArgumentException {
+        Assert.isTrue(timeout == null || timeout > 0, "The timeout must be null or positive");
     }
 
     /**
