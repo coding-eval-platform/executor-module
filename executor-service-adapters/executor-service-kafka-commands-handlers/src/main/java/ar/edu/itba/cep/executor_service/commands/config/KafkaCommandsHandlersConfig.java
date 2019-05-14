@@ -40,7 +40,7 @@ public class KafkaCommandsHandlersConfig {
     /**
      * Creates a bean of {@link PayloadDeserializer} of {@link ExecutionRequestDto}.
      *
-     * @return A {@link JacksonJsonPayloadDeserializer} of {@link ExecutionRequestDto}.
+     * @return A bean of {@link JacksonJsonPayloadDeserializer} of {@link ExecutionRequestDto}.
      */
     @Bean
     public PayloadDeserializer<ExecutionRequestDto> executionRequestDtoPayloadDeserializer() {
@@ -50,19 +50,31 @@ public class KafkaCommandsHandlersConfig {
     /**
      * Creates a bean of {@link PayloadSerializer} of {@link ExecutionRequestDto}.
      *
-     * @return A {@link JacksonJsonPayloadSerializer} of {@link ExecutionResultDto}.
+     * @return A bean of {@link JacksonJsonPayloadSerializer} of {@link ExecutionResultDto}.
      */
     @Bean
     public PayloadSerializer<ExecutionResultDto> executionResultDtoPayloadSerializer() {
         return new JacksonJsonPayloadSerializer<>(new ObjectMapper(), ExecutionResultDto.class);
     }
 
+    /**
+     * Creates a bean of {@link BiConsumerMessageProducer} that allows sending messages.
+     *
+     * @param kafkaTemplate The underlying {@link KafkaTemplate} used by the {@link MessageProducer}.
+     * @return A bean of {@link MessageProducer}.
+     */
     @Bean
     public MessageProducer messageProducer(final KafkaTemplate kafkaTemplate) {
         @SuppressWarnings("unchecked") final var template = (KafkaTemplate<String, Message>) kafkaTemplate;
         return new BiConsumerMessageProducer((message, channel) -> template.send(channel, message));
     }
 
+    /**
+     * Creates a bean of {@link GenericMessageBuilderFactory} of {@link ExecutionResultDto}.
+     *
+     * @param executionResultDtoPayloadSerializer A {@link PayloadSerializer} of {@link ExecutionResultDto}.
+     * @return A bean of {@link MessageBuilderFactory} of {@link ExecutionResultDto}.
+     */
     @Bean
     public MessageBuilderFactory<ExecutionResultDto> executionResultMessageBuilderFactory(
             final PayloadSerializer<ExecutionResultDto> executionResultDtoPayloadSerializer) {
