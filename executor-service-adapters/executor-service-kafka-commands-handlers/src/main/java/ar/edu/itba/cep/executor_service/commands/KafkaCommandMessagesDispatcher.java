@@ -42,7 +42,7 @@ public class KafkaCommandMessagesDispatcher {
      */
     @KafkaListener(
             topics = {
-                    "ExecutorService-Commands",
+                    Constants.EXECUTION_REQUEST_CHANNEL,
             },
             autoStartup = "true"
     )
