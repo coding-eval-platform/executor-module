@@ -1,13 +1,11 @@
 
-# Executor Service [![GitHub license](https://img.shields.io/badge/license-Apache%20License%202.0-blue.svg?style=flat)](http://www.apache.org/licenses/LICENSE-2.0) [![Build Status](https://travis-ci.org/coding-eval-platform/executor-service.svg?branch=master)](https://travis-ci.org/coding-eval-platform/executor-service)
+# Executor Service [![GitHub license](https://img.shields.io/badge/license-Apache%20License%202.0-blue.svg?style=flat)](http://www.apache.org/licenses/LICENSE-2.0) [![Build Status](https://img.shields.io/circleci/project/github/coding-eval-platform/executor-service/master.svg)](https://circleci.com/gh/coding-eval-platform/executor-service/tree/master) ![GitHub tag (latest SemVer)](https://img.shields.io/github/tag/coding-eval-platform/executor-service.svg)
 
 Service in charge of running code.
 
 ## Features
 
 - Compile (when needed) and run code
-- Store code to be run
-- Store results
 - Notify execution result
 
 
@@ -162,34 +160,6 @@ Restart your shell session in order to have the plugin running.
 Check [this resource](https://github.com/gcuisinier/jenv#plugins) for more information about jEnv plugins.
 
 
-#### Database
-
-The project requires a PostgreSQL database.
-
-##### Create a local database (Optional)
-
-1. Install PostgreSQL
-
-```
-$ brew install postgresql
-```
-
-2. Create a user and a database for the application. You can check the [create user](https://www.postgresql.org/docs/9.6/static/sql-createuser.html) and [create database](https://www.postgresql.org/docs/9.6/static/sql-createdatabase.html) documentations to learn how to perform this step.
-
-
-##### Set up project to use the database
-
-Set the following properties with the appropiate values:
-
-- ```spring.datasource.url```
-- ```spring.datasource.username```
-- ```spring.datasource.password```
-
-You can do this by changing the ```<project-root>/executor-service-application/src/main/resources/application.yml``` file, in the development section, or by defining the properties through the command line (with ```-Dkey=value``` properties, or with ```--key=value``` properties) when running the application.
-
-**Note:** These properties can be filled with the values of a local database, or with the values of a remote database.
-
-
 ### Build
 
 1. Install artifacts:
@@ -215,44 +185,61 @@ You can do this by changing the ```<project-root>/executor-service-application/s
 You can run the application using the following command:
 
 ```
-$ java [-Dkey=value properties] -jar <project-root>/executor-service-application/target/executor-service-application-0.0.1-SNAPSHOT.jar [--key=value properties]
+$ export EXEC_SERVICE_VERSION=<project-version>
+$ java [-Dkey=value properties] -jar <project-root>/executor-service-application/target/executor-service-application-$EXEC_SERVICE_VERSION.jar [--key=value properties]
 ```
 
 The following is a full example of how to run the application:
 
 ```
+$ export EXEC_SERVICE_VERSION=<project-version>
 java \
-	-Dspring.datasource.url=jdbc:postgresql://localhost:5432/coding-eval-platform__executor-service \
-	-Dspring.datasource.username=coding-eval-platform__executor-service \
-	-Dspring.datasource.password=coding-eval-platform__executor-service \
 	-jar <project-root>/executor-service-application/target/executor-service-application-0.0.1-SNAPSHOT.jar \
 	--spring.profiles.active=dev
 ```
 
-**Note:** In case of using a new database, this will create all tables.
+
+## Use with Docker
+
+This project includes a ```Dockerfile``` in the ```executor-service-application``` module, together with the [Spotify's dockerfile maven plugin](https://github.com/spotify/dockerfile-maven).
 
 
+### Build the image
 
-### Other stuff
+To create an image to run this project in Docker just package the application with maven, and set the ```docker-build``` profile.
+You just have to run the following command:
+
+```
+$ mvn clean package -P docker-build -Ddocker.image.tag=latest
+```
+
+### Run the project
+
+Once you have built the Docker image, just run the following command:
+
+```
+$ docker run -p 8000:8000 itbacep/executor-service:latest
+```
+
+Note that you have to use the same tag you used to create the image.
 
 
-1. **(Optional)** Install Flyway CLI. Check the [documentation](https://flywaydb.org/documentation/commandline/) in order to learn how to do it.
+## CI/CD Workflow
 
-	Flyway is a tool for performing database migrations easier (i.e changing schema, adding system data, etc.). Check their [website](https://flywaydb.org/) for more information.
+This project is integrated with [CircleCI](https://circleci.com/).
 
-2. **(Optional)** Create a Flyway configuration file. This file must contain the following properties:
+### Pull requests
 
-	```
-	# Flyway CLI configuration
+When a pull request is created, a build will be triggered in CircleCI, which must succeed in order to merge the pull request. This build will just **compile the source code and run tests**.
+Note that if still committing to a branch with an open pull request, each push to the said branch will trigger a build.
 
-	flyway.url=<database-url>
-	flyway.user=<database-username>
-	flyway.password=<database-user-password>
-	```
+### Pushes and merges into master
+Pushing or merging into ```master``` will also trigger the **compile** and **test** build in CircleCI. If the build succeeds, this will be followed by a Docker phase: it will build a Docker image and push it into DockerHub. This images will be tagged with the commit's hash.
 
-	This configution file will let you use Flyway easier. It won't ask for credentials each time you want to use it.
+### Releases
+A release is performed by tagging in git. Pushing a tag will also trigger the **compile** and **test** build in CircleCI. If the build succeeds, this will be followed by a Docker phase: it will build a Docker image and push it into DockerHub. This images will be tagged with the git's tag.
 
-	**Note:** The ```.gitignore``` file declares the ```flyway.conf``` file, so this information should not leak into GitHub.
+
 
 
 
