@@ -40,7 +40,7 @@ class TestHelper {
     static Long validTimeout() {
         final List<Long> validValues = new LinkedList<>();
         validValues.add(null);
-        validValues.add(Faker.instance().number().numberBetween(Long.MIN_VALUE, Long.MAX_VALUE));
+        validValues.add(Faker.instance().number().numberBetween(1, Long.MAX_VALUE));
         final var index = Faker.instance().number().numberBetween(0, validValues.size());
         return validValues.get(index);
     }
