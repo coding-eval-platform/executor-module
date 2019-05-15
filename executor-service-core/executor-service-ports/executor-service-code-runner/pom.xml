@@ -6,20 +6,23 @@
 
     <parent>
         <groupId>ar.edu.itba.cep</groupId>
-        <artifactId>executor-service</artifactId>
+        <artifactId>executor-service-ports</artifactId>
         <version>0.0.1-SNAPSHOT</version>
     </parent>
 
-    <artifactId>executor-service-adapters</artifactId>
+    <artifactId>executor-service-code-runner</artifactId>
     <name>${project.groupId}:${project.artifactId}</name>
-    <packaging>pom</packaging>
+    <packaging>jar</packaging>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
-    <modules>
-        <module>executor-service-processes-code-runner</module>
-        <module>executor-service-kafka-commands-handlers</module>
-    </modules>
+    <dependencies>
+        <dependency>
+            <groupId>${project.parent.groupId}</groupId>
+            <artifactId>executor-service-models</artifactId>
+            <version>${project.parent.version}</version>
+        </dependency>
+    </dependencies>
 </project>
