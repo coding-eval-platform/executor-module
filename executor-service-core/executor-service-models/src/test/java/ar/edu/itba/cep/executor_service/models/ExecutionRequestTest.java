@@ -85,6 +85,28 @@ class ExecutionRequestTest {
         );
     }
 
+    /**
+     * Tests that creating an {@link ExecutionRequest} with a non positive timeout
+     * throws an {@link IllegalArgumentException}.
+     */
+    @Test
+    void testNonPositiveTimeout() {
+        Assertions.assertThrows(
+                IllegalArgumentException.class,
+                () -> new ExecutionRequest(
+                        TestHelper.validCode(),
+                        TestHelper.validInputOutputList(),
+                        TestHelper.nonPositiveTimeout(),
+                        TestHelper.validLanguage()
+                ),
+                "Creating an execution request with a null language is being allowed."
+        );
+    }
+
+    /**
+     * Tests that creating an {@link ExecutionRequest} with a {@code null} {@link Language}
+     * throws an {@link IllegalArgumentException}.
+     */
     @Test
     void testNullLanguage() {
         Assertions.assertThrows(

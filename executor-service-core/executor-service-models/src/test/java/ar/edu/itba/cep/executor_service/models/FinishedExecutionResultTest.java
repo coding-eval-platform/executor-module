@@ -133,6 +133,10 @@ class FinishedExecutionResultTest {
         Mockito.verifyZeroInteractions(mockedExecutionRequest);
     }
 
+    /**
+     * Tests that creating a {@link FinishedExecutionResult} with a {@code null} {@link ExecutionRequest}
+     * throws an {@link IllegalArgumentException}.
+     */
     @Test
     void testNullExecutionRequest() {
         Assertions.assertThrows(IllegalArgumentException.class,

@@ -1,6 +1,5 @@
 package ar.edu.itba.cep.executor_service.models;
 
-import ar.edu.itba.cep.executor_service.models.Language;
 import com.github.javafaker.Faker;
 
 import java.util.Collections;
@@ -97,4 +96,11 @@ class TestHelper {
         return list;
     }
 
+    /**
+     * @return A random non positive long that represents a timeout.
+     */
+    /* package */
+    static long nonPositiveTimeout() {
+        return Faker.instance().number().numberBetween(Long.MIN_VALUE, 1);
+    }
 }
