@@ -28,14 +28,9 @@ public class RunnerConfig {
     @Bean
     public CodeRunner codeRunner(final OperatingSystemProcessCodeRunnerProperties properties) {
         return new OperatingSystemProcessCodeRunner(
-                properties.getPreRun().getCommand(),
-                properties.getPreRun().getArgs(),
-                properties.getPreRun().getTimeout(),
-                properties.getPreRun().isContinueOnNonZeroExitCode(),
-                properties.getRunner().getCommand(),
-                properties.getRunner().getArgs(),
-                properties.getRunner().getDefaultTimeout(),
-                properties.getBaseWorkingDirectory()
+                properties.getBaseWorkingDirectory(),
+                properties.getProcessTimeout(),
+                properties.getCommands()
         );
     }
 }
