@@ -25,15 +25,13 @@
 
 set -e # Stop script execution if something goes wrong
 
-echo $CODE
-echo $TIMEOUT
-echo $@
+# Initialization
+echo "$CODE" > ./Main.java
 
-# First, initialize stuff if necessary
-# For example, echo $CODE > ./Main.java
+# Compilation
+javac ./Main.java > /dev/null 2> ./compile-errors
 
-# Then compile te code if necessary
-# javac ./Main.java > /dev/null
+# TODO: check error code and compile errors
 
-# Finally run the code passing all arguments with the "$@" variable
-# timeout $TIMEOUT java Main "$@"
+# Execution
+timeout "$TIMEOUT" java Main "$@"
