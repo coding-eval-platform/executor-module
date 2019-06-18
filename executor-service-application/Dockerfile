@@ -1,21 +1,40 @@
 FROM openjdk:11.0.3-jdk-slim
 ARG JAR_FILE
-COPY target/${JAR_FILE} app.jar
 
-ENV RUNNERS_PATH = /usr/local/runners
-COPY java.sh $RUNNERS_PATH/run-java
-COPY ruby.sh $RUNNERS_PATH/run-ruby
-COPY c.sh $RUNNERS_PATH/run-c
+# Set up the necessary environment variables
+ENV CONFIG_LOCATION=config \
+    RUNNERS_CONFIG_FILE=runners.properties \
+    RUNNERS_PATH=/usr/local/runners \
+    JAR=app.jar \
+    RUNNERS_PREFIX=code-runner.commands \
+    JAVA_RUNNER=run-java.sh \
+    RUBY_RUNNER=run-ruby.sh \
+    C_RUNNER=run-c.sh
+
+# Path must be set in another layer as it uses stuff from the previous layer
 ENV PATH $RUNNERS_PATH:$PATH
 
-RUN apt-get update && apt-get install -y coreutils
+# Set up the additional configuration directory
+RUN set -eux; \
+        mkdir $CONFIG_LOCATION;
 
+# Set up the runners configuration
+RUN set -eux; \
+        touch $CONFIG_LOCATION/$RUNNERS_CONFIG_FILE; \
+        echo "$RUNNERS_PREFIX.java=$JAVA_RUNNER" >> $CONFIG_LOCATION/$RUNNERS_CONFIG_FILE; \
+        echo "$RUNNERS_PREFIX.ruby=$RUBY_RUNNER" >> $CONFIG_LOCATION/$RUNNERS_CONFIG_FILE; \
+        echo "$RUNNERS_PREFIX.c=$C_RUNNER" >> $CONFIG_LOCATION/$RUNNERS_CONFIG_FILE;
 
-VOLUME /tmp
-ENV JAVA_RUNNER "--code-runner.commands.java=run-java"
-ENV RUBY_RUNNER "--code-runner.commands.ruby=run-ruby"
-ENV C_RUNNER    "--code-runner.commands.c=run-c"
+# Copy executables
+COPY target/${JAR_FILE} $JAR
+COPY java.sh $RUNNERS_PATH/$JAVA_RUNNER
+COPY ruby.sh $RUNNERS_PATH/$RUBY_RUNNER
+COPY c.sh $RUNNERS_PATH/$C_RUNNER
 
+# Install needed packages
+RUN set -eux; \
+        apt-get update; \
+        apt-get install -y coreutils ruby gcc;
 
-ENTRYPOINT ["java","-jar", "app.jar", "$JAVA_RUNNER", "$RUBY_RUNNER", "$C_RUNNER"]
+ENTRYPOINT java -jar $JAR --spring.config.additional-location=file:$CONFIG_LOCATION/$RUNNERS_CONFIG_FILE
 EXPOSE 8000
