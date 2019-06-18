@@ -1,5 +1,6 @@
 FROM openjdk:11.0.3-jdk-slim
 ARG JAR_FILE
+ARG EXECUTORS_PATH
 
 # Set up the necessary environment variables
 ENV CONFIG_LOCATION=config \
@@ -25,11 +26,13 @@ RUN set -eux; \
         echo "$RUNNERS_PREFIX.ruby=$RUBY_RUNNER" >> $CONFIG_LOCATION/$RUNNERS_CONFIG_FILE; \
         echo "$RUNNERS_PREFIX.c=$C_RUNNER" >> $CONFIG_LOCATION/$RUNNERS_CONFIG_FILE;
 
-# Copy executables
+# Copy executable
 COPY target/${JAR_FILE} $JAR
-COPY java.sh $RUNNERS_PATH/$JAVA_RUNNER
-COPY ruby.sh $RUNNERS_PATH/$RUBY_RUNNER
-COPY c.sh $RUNNERS_PATH/$C_RUNNER
+
+# Copy executors
+COPY ${EXECUTORS_PATH}/java.sh $RUNNERS_PATH/$JAVA_RUNNER
+COPY ${EXECUTORS_PATH}/ruby.sh $RUNNERS_PATH/$RUBY_RUNNER
+COPY ${EXECUTORS_PATH}/c.sh $RUNNERS_PATH/$C_RUNNER
 
 # Install needed packages
 RUN set -eux; \
