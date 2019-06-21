@@ -1,8 +1,11 @@
 package ar.edu.itba.cep.executor_service.models;
 
+import lombok.ToString;
+
 /**
  * Represents an {@link ExecutionResult} that has timed-out.
  */
+@ToString(doNotUseGetters = true, callSuper = true)
 public class TimedOutExecutionResult extends ExecutionResult {
 
 
@@ -14,15 +17,5 @@ public class TimedOutExecutionResult extends ExecutionResult {
      */
     public TimedOutExecutionResult(final ExecutionRequest executionRequest) throws IllegalArgumentException {
         super(executionRequest);
-    }
-
-
-    // ================================
-    // toString
-    // ================================
-
-    @Override
-    public String toString() {
-        return "TimedOutExecutionResult{} " + super.toString();
     }
 }

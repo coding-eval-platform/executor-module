@@ -1,5 +1,8 @@
 package ar.edu.itba.cep.executor_service.models;
 
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.ToString;
 import org.springframework.util.Assert;
 
 import java.util.List;
@@ -8,6 +11,9 @@ import java.util.Objects;
 /**
  * Represents an execution request.
  */
+@Getter
+@ToString(doNotUseGetters = true, callSuper = true)
+@EqualsAndHashCode
 public class ExecutionRequest {
 
     /**
@@ -52,69 +58,6 @@ public class ExecutionRequest {
         this.language = language;
     }
 
-
-    /**
-     * @return The code to be run.
-     */
-    public String getCode() {
-        return code;
-    }
-
-    /**
-     * @return The input arguments to be passed to the execution.
-     */
-    public List<String> getInputs() {
-        return inputs;
-    }
-
-    /**
-     * @return The time given to execute, in milliseconds.
-     */
-    public Long getTimeout() {
-        return timeout;
-    }
-
-    /**
-     * @return The programming language in which the {@link #getCode()} is written.
-     */
-    public Language getLanguage() {
-        return language;
-    }
-
-
-    // ================================
-    // equals, hashcode and toString
-    // ================================
-
-    @Override
-    public boolean equals(final Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (!(o instanceof ExecutionRequest)) {
-            return false;
-        }
-        final ExecutionRequest that = (ExecutionRequest) o;
-        return code.equals(that.code) &&
-                inputs.equals(that.inputs) &&
-                Objects.equals(timeout, that.timeout) &&
-                language == that.language;
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(code, inputs, timeout, language);
-    }
-
-    @Override
-    public String toString() {
-        return "ExecutionRequest{" +
-                "code='" + code + '\'' +
-                ", inputs=" + inputs +
-                ", timeout=" + timeout +
-                ", language=" + language +
-                '}';
-    }
 
     // ================================
     // Assertions

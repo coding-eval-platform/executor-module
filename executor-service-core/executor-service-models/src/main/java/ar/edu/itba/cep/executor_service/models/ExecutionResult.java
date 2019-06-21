@@ -1,12 +1,16 @@
 package ar.edu.itba.cep.executor_service.models;
 
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.ToString;
 import org.springframework.util.Assert;
-
-import java.util.Objects;
 
 /**
  * An abstract execution result.
  */
+@Getter
+@ToString(doNotUseGetters = true, callSuper = true)
+@EqualsAndHashCode(of = "executionRequest")
 public abstract class ExecutionResult {
 
     /**
@@ -26,42 +30,6 @@ public abstract class ExecutionResult {
         this.executionRequest = executionRequest;
     }
 
-
-    /**
-     * @return The {@link ExecutionRequest} to which this execution result belongs to.
-     */
-    public ExecutionRequest getExecutionRequest() {
-        return executionRequest;
-    }
-
-
-    // ================================
-    // equals, hashcode and toString
-    // ================================
-
-    @Override
-    public boolean equals(final Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (!(o instanceof ExecutionResult)) {
-            return false;
-        }
-        final var that = (ExecutionResult) o;
-        return executionRequest.equals(that.executionRequest);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(executionRequest);
-    }
-
-    @Override
-    public String toString() {
-        return "ExecutionResult{" +
-                "executionRequest=" + executionRequest +
-                '}';
-    }
 
     // ================================
     // Assertions
