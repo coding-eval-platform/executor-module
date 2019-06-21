@@ -2,9 +2,12 @@ package ar.edu.itba.cep.executor_service.models;
 
 import com.github.javafaker.Faker;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 /**
  * Helper class for testing.
@@ -40,17 +43,17 @@ class TestHelper {
         final List<Long> validValues = new LinkedList<>();
         validValues.add(null);
         validValues.add(Faker.instance().number().numberBetween(1, Long.MAX_VALUE));
-        final var index = Faker.instance().number().numberBetween(0, validValues.size());
+        final var index = (int) Faker.instance().number().numberBetween(0L, validValues.size());
         return validValues.get(index);
     }
 
     /**
-     * @return a valid {@link Language}.
+     * @return A valid {@link Language}.
      */
     /* package */
     static Language validLanguage() {
         final var languages = Language.values();
-        final var index = Faker.instance().number().numberBetween(0, languages.length);
+        final var index = (int) Faker.instance().number().numberBetween(0L, languages.length);
         return languages[index];
     }
 
@@ -75,6 +78,30 @@ class TestHelper {
         return Faker.instance()
                 .lorem()
                 .words(STRING_LISTS_SIZE);
+    }
+
+    /**
+     * @return A random compiled {@link Language}.
+     */
+    /* package */
+    static Language compiledLanguage() {
+        final var compiledLanguages = Arrays.stream(Language.values())
+                .filter(Language::isCompiled)
+                .collect(Collectors.toList());
+        final var index = (int) Faker.instance().number().numberBetween(0L, compiledLanguages.size());
+        return compiledLanguages.get(index);
+    }
+
+    /**
+     * @return A random non-compiled {@link Language}.
+     */
+    /* package */
+    static Language nonCompiledLanguage() {
+        final var nonCompiledLanguages = Arrays.stream(Language.values())
+                .filter(Predicate.not(Language::isCompiled))
+                .collect(Collectors.toList());
+        final var index = (int) Faker.instance().number().numberBetween(0L, nonCompiledLanguages.size());
+        return nonCompiledLanguages.get(index);
     }
 
 
