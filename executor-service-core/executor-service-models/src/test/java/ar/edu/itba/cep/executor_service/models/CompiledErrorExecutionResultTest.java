@@ -23,7 +23,7 @@ class CompiledErrorExecutionResultTest {
      * Tests that the constructor does not fail when invoking it with valid arguments.
      *
      * @param mockedRequest A mocked {@link ExecutionRequest} to be passed to the
-     *                      {@link CompileErrorExecutionResult#CompileErrorExecutionResult(int, List, List, ExecutionRequest)}
+     *                      {@link CompileErrorExecutionResult#CompileErrorExecutionResult(List, ExecutionRequest)}
      *                      constructor.
      */
     @Test
@@ -31,8 +31,6 @@ class CompiledErrorExecutionResultTest {
         Mockito.when(mockedRequest.getLanguage()).thenReturn(TestHelper.compiledLanguage());
         Assertions.assertDoesNotThrow(
                 () -> new CompileErrorExecutionResult(
-                        TestHelper.validExitCode(),
-                        TestHelper.validInputOutputList(),
                         TestHelper.validInputOutputList(),
                         mockedRequest
                 ),
@@ -46,90 +44,44 @@ class CompiledErrorExecutionResultTest {
     // Constraint testing
     // ================================================================================================================
 
+
     /**
-     * Tests that creating an {@link ExecutionResult} with a {@code null} {@code stdout} {@link List}
-     * throws an {@link IllegalArgumentException}.
+     * Tests that creating an {@link CompileErrorExecutionResult} with a {@code null} {@code compilerErrors}
+     * {@link List} throws an {@link IllegalArgumentException}.
      *
      * @param mockedRequest A mocked {@link ExecutionRequest} to be passed to the
-     *                      {@link CompileErrorExecutionResult#CompileErrorExecutionResult(int, List, List, ExecutionRequest)}
+     *                      {@link CompileErrorExecutionResult#CompileErrorExecutionResult(List, ExecutionRequest)}
      *                      constructor.
      */
     @Test
-    void testNullStdout(@Mock final ExecutionRequest mockedRequest) {
+    void testNullCompilerErrorList(@Mock final ExecutionRequest mockedRequest) {
         Assertions.assertThrows(IllegalArgumentException.class,
                 () -> new CompileErrorExecutionResult(
-                        TestHelper.validExitCode(),
                         null,
-                        TestHelper.validInputOutputList(),
                         mockedRequest
                 ),
-                "Creating a compile error execution result with a null stdout list is being allowed."
+                "Creating a compile error execution result with a null compiler errors list is being allowed."
         );
         Mockito.verifyZeroInteractions(mockedRequest);
     }
 
     /**
      * Tests that creating an {@link CompileErrorExecutionResult} with a {@code null} element
-     * in the {@code stdout} {@link List} throws an {@link IllegalArgumentException}.
+     * in the {@code compilerErrors} {@link List} throws an {@link IllegalArgumentException}.
      *
      * @param mockedRequest A mocked {@link ExecutionRequest} to be passed to the
-     *                      {@link CompileErrorExecutionResult#CompileErrorExecutionResult(int, List, List, ExecutionRequest)}
+     *                      {@link CompileErrorExecutionResult#CompileErrorExecutionResult(List, ExecutionRequest)}
      *                      constructor.
      */
     @Test
-    void testNullElementInStdout(@Mock final ExecutionRequest mockedRequest) {
+    void testNullElementInCompilerErrorList(@Mock final ExecutionRequest mockedRequest) {
         Assertions.assertThrows(IllegalArgumentException.class,
                 () -> new CompileErrorExecutionResult(
-                        TestHelper.validExitCode(),
-                        TestHelper.inputOutputListWithNullElement(),
-                        TestHelper.validInputOutputList(),
-                        mockedRequest
-                ),
-                "Creating a compile error execution result with a null element in the stdout list is being allowed."
-        );
-        Mockito.verifyZeroInteractions(mockedRequest);
-    }
-
-    /**
-     * Tests that creating an {@link CompileErrorExecutionResult} with a {@code null} {@code stderr} {@link List}
-     * throws an {@link IllegalArgumentException}.
-     *
-     * @param mockedRequest A mocked {@link ExecutionRequest} to be passed to the
-     *                      {@link CompileErrorExecutionResult#CompileErrorExecutionResult(int, List, List, ExecutionRequest)}
-     *                      constructor.
-     */
-    @Test
-    void testNullStderr(@Mock final ExecutionRequest mockedRequest) {
-        Assertions.assertThrows(IllegalArgumentException.class,
-                () -> new CompileErrorExecutionResult(
-                        TestHelper.validExitCode(),
-                        TestHelper.validInputOutputList(),
-                        null,
-                        mockedRequest
-                ),
-                "Creating a compile error execution result with a null stderr list is being allowed."
-        );
-        Mockito.verifyZeroInteractions(mockedRequest);
-    }
-
-    /**
-     * Tests that creating an {@link CompileErrorExecutionResult} with a {@code null} element
-     * in the {@code stderr} {@link List} throws an {@link IllegalArgumentException}.
-     *
-     * @param mockedRequest A mocked {@link ExecutionRequest} to be passed to the
-     *                      {@link CompileErrorExecutionResult#CompileErrorExecutionResult(int, List, List, ExecutionRequest)}
-     *                      constructor.
-     */
-    @Test
-    void testNullElementInStderr(@Mock final ExecutionRequest mockedRequest) {
-        Assertions.assertThrows(IllegalArgumentException.class,
-                () -> new CompileErrorExecutionResult(
-                        TestHelper.validExitCode(),
-                        TestHelper.validInputOutputList(),
                         TestHelper.inputOutputListWithNullElement(),
                         mockedRequest
                 ),
-                "Creating a compile error execution result with a null element in the stderr list is being allowed."
+                "Creating a compile error execution result with a null element in the compiler errors list" +
+                        " is being allowed."
         );
         Mockito.verifyZeroInteractions(mockedRequest);
     }
@@ -142,8 +94,6 @@ class CompiledErrorExecutionResultTest {
     void testNullExecutionRequest() {
         Assertions.assertThrows(IllegalArgumentException.class,
                 () -> new CompileErrorExecutionResult(
-                        TestHelper.validExitCode(),
-                        TestHelper.validInputOutputList(),
                         TestHelper.validInputOutputList(),
                         null
                 ),
@@ -156,7 +106,7 @@ class CompiledErrorExecutionResultTest {
      * containing a non compiled {@link Language} throws an {@link IllegalArgumentException}.
      *
      * @param mockedRequest A mocked {@link ExecutionRequest} to be passed to the
-     *                      {@link CompileErrorExecutionResult#CompileErrorExecutionResult(int, List, List, ExecutionRequest)}
+     *                      {@link CompileErrorExecutionResult#CompileErrorExecutionResult(List, ExecutionRequest)}
      *                      constructor.
      */
     @Test
@@ -164,8 +114,6 @@ class CompiledErrorExecutionResultTest {
         Mockito.when(mockedRequest.getLanguage()).thenReturn(TestHelper.nonCompiledLanguage());
         Assertions.assertThrows(IllegalArgumentException.class,
                 () -> new CompileErrorExecutionResult(
-                        TestHelper.validExitCode(),
-                        TestHelper.validInputOutputList(),
                         TestHelper.validInputOutputList(),
                         mockedRequest
                 ),
