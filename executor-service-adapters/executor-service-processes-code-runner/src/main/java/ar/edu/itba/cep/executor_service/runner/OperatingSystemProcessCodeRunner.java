@@ -8,6 +8,7 @@ import org.springframework.util.Assert;
 
 import java.io.*;
 import java.nio.charset.Charset;
+import java.nio.file.Files;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -24,6 +25,19 @@ public class OperatingSystemProcessCodeRunner implements CodeRunner, Initializin
      * The {@link Logger}.
      */
     private final static Logger LOGGER = LoggerFactory.getLogger(OperatingSystemProcessCodeRunner.class);
+
+    /**
+     * The name for the file where the execution result must be stored.
+     */
+    private final static String RESULT_FILE_NAME = "result"; // TODO: make this configurable?
+
+    /**
+     * Margin for the timeout to be added to the time Java will wait the sub-processes.
+     * This has nothing to do with the timeout given to the program being tested, but the time this process
+     * will wait any runner sub-processes till it consider the child to be timed-out.
+     */
+    private final static long GRACE_MARGIN = 10000; // TODO: make this configurable?
+
 
     /**
      * Base working directory for the runner.
@@ -120,40 +134,42 @@ public class OperatingSystemProcessCodeRunner implements CodeRunner, Initializin
      * Runs the code, using the inputs, language and timeout in the given {@link ExecutionRequest}
      * and returns the corresponding {@link ExecutionResult}.
      *
-     * @param executionRequest The {@link ExecutionRequest} to be processed.
+     * @param request          The {@link ExecutionRequest} to be processed.
      * @param workingDirectory The {@link File} representing the working directory in which the process will run.
      * @return The {@link ExecutionResult} that comes up from the execution.
      */
-    private ExecutionResult runCode(final ExecutionRequest executionRequest, final File workingDirectory) {
-        final var language = executionRequest.getLanguage();
+    private ExecutionResult runCode(final ExecutionRequest request, final File workingDirectory) {
+        final var language = request.getLanguage();
         final var program = Optional
                 .ofNullable(commands.get(language))
                 .orElseThrow(() -> new RuntimeException("No command for language " + language));
 
         final List<String> command = new LinkedList<>();
         command.add(program);
-        command.addAll(executionRequest.getInputs());
+        command.addAll(request.getInputs());
 
         final var processBuilder = new ProcessBuilder()
                 .directory(workingDirectory)
                 .command(command);
         final var environment = processBuilder.environment();
-        environment.put("CODE", executionRequest.getCode());
-        environment.put("TIMEOUT", Double.toString(executionRequest.getTimeout() / 1000d)); // TODO: BigDecimal?
+        environment.put("CODE", request.getCode());
+        environment.put("TIMEOUT", Double.toString(request.getTimeout() / 1000d)); // TODO: BigDecimal?
+        environment.put("RESULT_FILE_NAME", RESULT_FILE_NAME);
 
+        final var processTimeout = Math.max(request.getTimeout(), this.processTimeout) + GRACE_MARGIN;
         try {
             // Start the process.
             final var process = processBuilder.start();
             if (executionHasCompleted(process, processTimeout)) {
-                // TODO: check compile error
-                final var stdout = readLines(process.getInputStream());
-                final var stderr = readLines(process.getErrorStream());
-                final var exitCode = process.exitValue(); // TODO: 124 is timeout also
-                return new FinishedExecutionResult(exitCode, stdout, stderr, executionRequest);
+                final var resultPath = new File(workingDirectory, RESULT_FILE_NAME).toPath();
+                final ProcessResult result = Files.lines(resultPath).findFirst()
+                        .flatMap(ProcessResult::fromString)
+                        .orElse(ProcessResult.UNKNOWN_ERROR);
+                return result.handleFinishedProcess(process, request);
             }
-            return new TimedOutExecutionResult(executionRequest);
+            return new TimedOutExecutionResult(request);
         } catch (final IOException e) {
-            throw new ExecutionFailedException("The execution failed unexpectedly", e); // TODO: retry?
+            throw new UncheckedIOException("The execution failed unexpectedly", e); // TODO: define proper exception
         }
     }
 
@@ -174,28 +190,121 @@ public class OperatingSystemProcessCodeRunner implements CodeRunner, Initializin
             // Wait till it finishes, or times out.
             return process.waitFor(timeout, TimeUnit.MILLISECONDS);
         } catch (final InterruptedException e) {
+            LOGGER.warn("The execution was unexpectedly interrupted", e);
             return false; // If interrupted, return false.
         }
     }
 
-    /**
-     * Charset to be used to convert an {@link InputStream} into {@link String}s.
-     */
-    private static final Charset INPUT_STREAM_CHARSET = Charset.forName("UTF-8"); // TODO: make it a param?
 
     /**
-     * Converts the given {@code inputStream} into a {@link List} of {@link String},
-     * where each element of the {@link List} is a line in the {@link InputStream}.
-     *
-     * @param inputStream The {@link InputStream} to be read.
-     * @return A {@link List} with the read lines.
-     * @throws UncheckedIOException If any {@link IOException} occurs while reading the {@link InputStream}.
+     * Enum containing the possible results of a process.
      */
-    private static List<String> readLines(final InputStream inputStream) throws UncheckedIOException {
-        try (final var bufferedReader = new BufferedReader(new InputStreamReader(inputStream, INPUT_STREAM_CHARSET))) {
-            return bufferedReader.lines().collect(Collectors.toList());
-        } catch (final IOException e) {
-            throw new UncheckedIOException(e); // TODO: define proper exception
+    public enum ProcessResult {
+        /**
+         * Indicates that the execution process completed as expected.
+         */
+        COMPLETED {
+            @Override
+            ExecutionResult handleFinishedProcess(final Process process, final ExecutionRequest executionRequest) {
+                return new FinishedExecutionResult(
+                        process.exitValue(),
+                        readLines(process.getInputStream()),
+                        readLines(process.getErrorStream()),
+                        executionRequest
+                );
+            }
+        },
+        /**
+         * Indicates that the execution timed-out (i.e the running phase).
+         */
+        TIMEOUT {
+            @Override
+            ExecutionResult handleFinishedProcess(final Process process, final ExecutionRequest executionRequest) {
+                return new TimedOutExecutionResult(executionRequest);
+            }
+        },
+        /**
+         * Indicates that the compilation phase failed (i.e the code could not be compiled).
+         */
+        COMPILE_ERROR {
+            @Override
+            ExecutionResult handleFinishedProcess(final Process process, final ExecutionRequest executionRequest) {
+                return new CompileErrorExecutionResult(
+                        readLines(process.getErrorStream()),
+                        executionRequest
+                );
+            }
+        },
+        /**
+         * Indicates that there was an error while initializing. This is an unexpected situation.
+         */
+        INITIALIZATION_ERROR {
+            @Override
+            ExecutionResult handleFinishedProcess(final Process process, final ExecutionRequest executionRequest) {
+                return new InitializationErrorExecutionResult(executionRequest);
+            }
+        },
+        /**
+         * Indicates that an unexpected error (different from the rest of this enum's error values) occurred.
+         */
+        UNKNOWN_ERROR {
+            @Override
+            ExecutionResult handleFinishedProcess(final Process process, final ExecutionRequest executionRequest) {
+                return new UnknownErrorExecutionResult(executionRequest);
+            }
+        },
+        ;
+
+
+        /**
+         * Handles the given {@code process} once it has finished.
+         *
+         * @param process          The {@link Process} to be handled.
+         * @param executionRequest The {@link ExecutionRequest} that made this process start.
+         * @return The {@link ExecutionResult} that comes from the given {@code process}.
+         * @apiNote This method assumes that the given process has finished.
+         */
+        /* package */
+        abstract ExecutionResult handleFinishedProcess(final Process process, final ExecutionRequest executionRequest);
+
+        /**
+         * Charset to be used to convert an {@link InputStream} into {@link String}s.
+         */
+        private static final Charset INPUT_STREAM_CHARSET = Charset.forName("UTF-8"); // TODO: make it a param?
+
+
+        /**
+         * Converts the given {@code inputStream} into a {@link List} of {@link String},
+         * where each element of the {@link List} is a line in the {@link InputStream}.
+         *
+         * @param inputStream The {@link InputStream} to be read.
+         * @return A {@link List} with the read lines.
+         * @throws UncheckedIOException If any {@link IOException} occurs while reading the {@link InputStream}.
+         */
+        private static List<String> readLines(final InputStream inputStream) throws UncheckedIOException {
+            try (final var bufferedReader = new BufferedReader(new InputStreamReader(inputStream, INPUT_STREAM_CHARSET))) {
+                return bufferedReader.lines().collect(Collectors.toList());
+            } catch (final IOException e) {
+                throw new UncheckedIOException(e); // TODO: define proper exception
+            }
+        }
+
+
+        /**
+         * Creates a {@link ProcessResult} from the given {@link String} {@code value}.
+         *
+         * @param value The {@link String} used to search for the {@link ProcessResult} to be returned.
+         * @return An {@link Optional} containing the {@link ProcessResult} corresponding to the given {@code value}
+         * if it exists, or empty otherwise.
+         */
+        /* package */
+        static Optional<ProcessResult> fromString(final String value) {
+            try {
+                return Optional.of(valueOf(value.toUpperCase()));
+            } catch (final IllegalArgumentException e) {
+                LOGGER.warn("An unexpected value (${}) was received", value);
+                return Optional.empty();
+            }
         }
     }
 }
