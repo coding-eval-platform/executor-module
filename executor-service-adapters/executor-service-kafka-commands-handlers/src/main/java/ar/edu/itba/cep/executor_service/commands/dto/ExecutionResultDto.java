@@ -41,19 +41,19 @@ public abstract class ExecutionResultDto<R extends ExecutionResult> {
      */
     /* package */ static final String FINISHED_STRING_VALUE = "FINISHED";
     /**
-     * Value that will be included in JSONs created from a {@link TimedOutExecutionResult}.
+     * Value that will be included in JSONs created from a {@link TimedOutExecutionResultDto}.
      */
     /* package */ static final String TIMED_OUT_STRING_VALUE = "TIMED_OUT";
     /**
-     * Value that will be included in JSONs created from a {@link FinishedExecutionResultDto}.
+     * Value that will be included in JSONs created from a {@link CompileErrorExecutionResultDto}.
      */
     /* package */ static final String COMPILED_ERROR_STRING_VALUE = "COMPILE_ERROR";
     /**
-     * Value that will be included in JSONs created from a {@link FinishedExecutionResultDto}.
+     * Value that will be included in JSONs created from a {@link InitializationErrorExecutionResultDto}.
      */
     /* package */ static final String INITIALIZATION_ERROR_STRING_VALUE = "INITIALIZATION_ERROR";
     /**
-     * Value that will be included in JSONs created from a {@link FinishedExecutionResultDto}.
+     * Value that will be included in JSONs created from a {@link UnknownErrorExecutionResultDto}.
      */
     /* package */ static final String UNKNOWN_ERROR_STRING_VALUE = "UNKNOWN_ERROR";
 
