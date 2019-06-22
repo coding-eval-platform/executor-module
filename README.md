@@ -160,6 +160,44 @@ Restart your shell session in order to have the plugin running.
 Check [this resource](https://github.com/gcuisinier/jenv#plugins) for more information about jEnv plugins.
 
 
+#### Kafka
+
+The project requires a [Kafka](https://kafka.apache.org/) cluster to start and to process requests. Kafka requires [Zookeeper](https://zookeeper.apache.org/).
+
+
+##### Create a local cluster
+
+1. Instal Zookeeper
+
+```
+$ brew install zookeeper
+```
+
+2. Install Kafka.
+
+```
+$ brew install kafka
+```
+
+That's it.
+
+##### Setup project to use the cluster
+
+Set the following property:
+
+- ```spring.kafka.bootstrap-servers```
+
+You can do this by changing the `<project-root>/evaluations-service-application/src/main/resources/application.yml` file, in the development section, or by defining the properties through the command line (with `-Dkey=value` properties, or with `--key=value` properties) when running the application.
+
+The property must be set with the Kafka brokers address and port. You can set several of them. THe format is the following: ```host:port```. Check the following example:
+
+```
+spring.kafka.bootstrap-servers:localhost:9092
+```
+
+Note: These properties can be filled with the values of a local cluster, or with the values of a remote cluster.
+
+
 ### Build
 
 1. Install artifacts:
@@ -194,6 +232,7 @@ The following is a full example of how to run the application:
 ```
 $ export EXEC_SERVICE_VERSION=<project-version>
 java \
+	-Dspring.kafka.bootstrap-servers=localhost:9092 \
 	-jar <project-root>/executor-service-application/target/executor-service-application-0.0.1-SNAPSHOT.jar \
 	--spring.profiles.active=dev
 ```
@@ -222,6 +261,9 @@ $ docker run -p 8000:8000 itbacep/executor-service:latest
 ```
 
 Note that you have to use the same tag you used to create the image.
+
+Note that you will have to link the container with another container (or the host machine)
+in which both a Kafka cluster is running.
 
 
 ## CI/CD Workflow
