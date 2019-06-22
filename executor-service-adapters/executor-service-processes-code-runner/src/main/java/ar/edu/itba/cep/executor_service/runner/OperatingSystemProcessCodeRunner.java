@@ -144,6 +144,10 @@ public class OperatingSystemProcessCodeRunner implements CodeRunner, Initializin
                 .ofNullable(commands.get(language))
                 .orElseThrow(() -> new RuntimeException("No command for language " + language));
 
+
+        // First initialize this in case no timeout was set
+        final var executionTimeout = Optional.ofNullable(request.getTimeout()).orElse(this.processTimeout);
+
         final List<String> command = new LinkedList<>();
         command.add(program);
         command.addAll(request.getInputs());
@@ -153,10 +157,10 @@ public class OperatingSystemProcessCodeRunner implements CodeRunner, Initializin
                 .command(command);
         final var environment = processBuilder.environment();
         environment.put("CODE", request.getCode());
-        environment.put("TIMEOUT", Double.toString(request.getTimeout() / 1000d)); // TODO: BigDecimal?
+        environment.put("TIMEOUT", Double.toString(executionTimeout / 1000d)); // TODO: BigDecimal?
         environment.put("RESULT_FILE_NAME", RESULT_FILE_NAME);
 
-        final var processTimeout = Math.max(request.getTimeout(), this.processTimeout) + GRACE_MARGIN;
+        final var processTimeout = Math.max(executionTimeout, this.processTimeout) + GRACE_MARGIN;
         try {
             // Start the process.
             final var process = processBuilder.start();
