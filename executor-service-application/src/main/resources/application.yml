@@ -29,18 +29,12 @@ spring:
 
 
 code-runner:
-    pre-run:
-        command: "echo"
-        args:
-            - "\"Pre-run is Working!\""
-        timeout: 10000
-        continue-on-non-zero-exit-code: false
-    runner:
-        command: "echo"
-        args:
-            - "\"Runner is Working!\""
-        default-timeout: 10000
-    base-working-directory: "/tmp"
+    base-working-directory: /tmp/
+    process-timeout: 300000 # 5 minutes
+    commands:
+        java:   "java.sh"
+        ruby:   "ruby.sh"
+        c:      "c.sh"
 
 command-handler:
     result-handler:

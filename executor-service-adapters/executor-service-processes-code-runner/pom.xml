@@ -25,9 +25,16 @@
             <version>${project.parent.version}</version>
         </dependency>
 
+        <!-- Spring Boot Starter -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter</artifactId>
+        </dependency>
+        <!-- Lombok -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <scope>provided</scope>
         </dependency>
 
         <!-- Spring Boot Custom properties -->

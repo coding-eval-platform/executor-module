@@ -1,27 +1,23 @@
 package ar.edu.itba.cep.executor_service.runner;
 
-import ar.edu.itba.cep.executor_service.models.ExecutionRequest;
-import ar.edu.itba.cep.executor_service.models.ExecutionResult;
-import ar.edu.itba.cep.executor_service.models.FinishedExecutionResult;
-import ar.edu.itba.cep.executor_service.models.TimedOutExecutionResult;
+import ar.edu.itba.cep.executor_service.models.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.util.Assert;
-import org.springframework.util.StringUtils;
 
 import java.io.*;
 import java.nio.charset.Charset;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.nio.file.Files;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * Component in charge of running code.
+ * A {@link CodeRunner} that uses the underlying OS to run code,
+ * using the <a href=https://en.wikipedia.org/wiki/Fork%E2%80%93exec>fork-exec</a> technique.
+ * See also <a href=https://en.wikipedia.org/wiki/Spawn_(computing)>Spawning</a>.
  */
 public class OperatingSystemProcessCodeRunner implements CodeRunner, InitializingBean {
 
@@ -31,83 +27,69 @@ public class OperatingSystemProcessCodeRunner implements CodeRunner, Initializin
     private final static Logger LOGGER = LoggerFactory.getLogger(OperatingSystemProcessCodeRunner.class);
 
     /**
-     * The command executed before sending code to run.
-     * Can be used to create sources in the working directory, compile, etc.
+     * The name for the file where the execution result must be stored.
      */
-    private final String preRunCommand;
+    private final static String RESULT_FILE_NAME = "result"; // TODO: make this configurable?
+
     /**
-     * Arguments passed to the pre-run command
+     * Margin for the timeout to be added to the time Java will wait the sub-processes.
+     * This has nothing to do with the timeout given to the program being tested, but the time this process
+     * will wait any runner sub-processes till it consider the child to be timed-out.
      */
-    private final List<String> preRunArgs;
-    /**
-     * Timeout given to the pre-run command.
-     */
-    private final long preRunCommandTimeout;
-    /**
-     * A flag indicating whether the running process should be performed
-     * when the pre-run command's exit value is not zero.
-     */
-    private final boolean continueOnPreRunNonZeroExitCode;
-    /**
-     * The command used to run the code (e.g bash, javac && java, jshell, irb, python, custom script, etc.).
-     */
-    private final String runnerCommand;
-    /**
-     * Arguments for the code execution command.
-     */
-    private final List<String> runnerArgs;
-    /**
-     * Default timeout given to the runner command.
-     */
-    private final long defaultRunnerTimeout;
+    private final static long GRACE_MARGIN = 10000; // TODO: make this configurable?
+
+
     /**
      * Base working directory for the runner.
+     * New directories will be created here where each execution will be performed.
      */
     private final File baseWorkingDir;
 
+    /**
+     * Timeout to be given to the runner command process in case it hangs out.
+     * This is different than the execution timeout, which is used to evaluate efficiency and performance of code.
+     */
+    private final long processTimeout;
 
     /**
-     * @param preRunCommand                   The command executed before sending code to run.
-     *                                        Can be used to create sources in the working directory, compile, etc.
-     * @param preRunArgs                      Arguments passed to the pre-run command
-     * @param preRunCommandTimeout            Timeout given to the pre-run command.
-     * @param continueOnPreRunNonZeroExitCode A flag indicating whether the running process should be performed
-     *                                        when the pre-run command's exit value is not zero.
-     * @param runnerCommand                   The command used to run the code
-     *                                        (e.g bash, javac && java, jshell, irb, python, custom script, etc.).
-     * @param runnerArgs                      Arguments for the code execution command.
-     * @param defaultRunnerTimeout            Default timeout given to the runner command.
-     * @param baseWorkingDir                  Base working directory for the runner.
+     * A {@link Map} containing the commands to be used for each {@link Language}.
+     * This commands can be OS shell native commands, shell script files, executable files, custom programs, etc.
+     * The only requirement is that a {@link Process} can be started using the values of the {@link Map}.
+     * See the execve <a href=http://man7.org/linux/man-pages/man2/execve.2.html>System Call Manual</a>,
+     * or the <a href=https://docs.microsoft.com/en-us/cpp/c-runtime-library/spawn-wspawn-functions>Spawn functions
+     * documentation</a> for more information on this.
+     */
+    private final Map<Language, String> commands;
+
+
+    /**
+     * @param baseWorkingDir Base working directory for the runner.
+     *                       New directories will be created here where each execution will be performed.
+     * @param processTimeout Timeout to be given to the runner command process in case it hangs out.
+     *                       This is different than the execution timeout,
+     *                       which is used to evaluate efficiency and performance of code.
+     * @param commands       A {@link Map} containing the commands to be used for each {@link Language}.
+     *                       This commands can be OS shell native commands, shell script files, executable files,
+     *                       custom programs, etc.
+     *                       The only requirement is that a {@link Process} can be started using the values
+     *                       of the {@link Map}.
+     *                       See the execve <a href=http://man7.org/linux/man-pages/man2/execve.2.html>System Call
+     *                       Manual</a>, or the
+     *                       <a href=https://docs.microsoft.com/en-us/cpp/c-runtime-library/spawn-wspawn-functions>Spawn
+     *                       functions documentation</a> for more information on this.
      */
     public OperatingSystemProcessCodeRunner(
-            final String preRunCommand,
-            final List<String> preRunArgs,
-            final long preRunCommandTimeout,
-            final boolean continueOnPreRunNonZeroExitCode,
-            final String runnerCommand,
-            final List<String> runnerArgs,
-            final long defaultRunnerTimeout,
-            final String baseWorkingDir) {
-        Assert.hasText(preRunCommand, "The pre-run command must be set.");
-        Assert.isTrue(preRunArgs.stream().allMatch(StringUtils::hasText), "All the arguments must have text.");
-        Assert.isTrue(preRunCommandTimeout > 0, "The timeout for the pre-run command must be positive");
-        Assert.hasText(runnerCommand, "The runner command must be set.");
-        Assert.isTrue(runnerArgs.stream().allMatch(StringUtils::hasText), "All the arguments must have text.");
-        Assert.isTrue(defaultRunnerTimeout > 0, "The default timeout for the runner command must be positive");
-        Assert.hasText(baseWorkingDir, "The base working directory must be set.");
-        this.preRunCommand = preRunCommand;
-        this.preRunArgs = preRunArgs;
-        this.preRunCommandTimeout = preRunCommandTimeout;
-        this.continueOnPreRunNonZeroExitCode = continueOnPreRunNonZeroExitCode;
-        this.defaultRunnerTimeout = defaultRunnerTimeout;
-        this.runnerCommand = runnerCommand;
-        this.runnerArgs = runnerArgs;
+            final String baseWorkingDir,
+            final long processTimeout,
+            final Map<Language, String> commands) {
         this.baseWorkingDir = new File(baseWorkingDir);
+        this.processTimeout = processTimeout;
+        this.commands = Collections.unmodifiableMap(commands);
     }
 
     @Override
     public void afterPropertiesSet() {
-        if (!baseWorkingDir.isDirectory()) {
+        if (baseWorkingDir.exists() && !baseWorkingDir.isDirectory()) {
             throw new IllegalStateException("The base working directory file does not reference a directory");
         }
     }
@@ -122,122 +104,72 @@ public class OperatingSystemProcessCodeRunner implements CodeRunner, Initializin
     @Override
     public ExecutionResult processExecutionRequest(final ExecutionRequest executionRequest)
             throws IllegalArgumentException {
-        Assert.notNull(executionRequest, "The execution request mut not be null");
-        final var workingDirectory = createWorkingDirectory(); // TODO: should we lock the directory?
-        preRun(workingDirectory, executionRequest.getCode()); // TODO: if compiled and failed, then return the corresponding ExecutionResult
-        final var timeout = Optional.ofNullable(executionRequest.getTimeout()).orElse(defaultRunnerTimeout);
-        return runCode(workingDirectory, executionRequest.getInputs(), timeout).apply(executionRequest);
+        Assert.notNull(executionRequest, "The execution request must not be null");
+        final var workingDirectory = createWorkingDirectory(); // TODO: should we lock the working directory?
+        return runCode(executionRequest, workingDirectory);
         // TODO: should we delete the working directory?
     }
 
     /**
-     * Creates the working directory where the code will be run. It creates all the directories that are needed.
+     * Creates the working directory where the runner process will execute.
+     * It creates all the directories that are needed.
      *
      * @return The {@link File} representing the working directory.
      */
     private File createWorkingDirectory() {
-        Assert.state(baseWorkingDir.exists() || baseWorkingDir.mkdirs(),
-                "The base working directory does not exist and could not be created");
-        // TODO: should we lock the base working directory?
+        if (!baseWorkingDir.exists() && !baseWorkingDir.mkdirs()) {
+            throw new WorkingDirectoryException("The base working directory does not exist and could not be created");
+        }
         final var workingDirectory = new File(baseWorkingDir, UUID.randomUUID().toString());
         if (workingDirectory.exists()) {
-            throw new RuntimeException("The working directory to be created already exists"); // TODO: improve this!
+            throw new WorkingDirectoryException("The working directory to be created already exists"); // TODO: retry?
         }
-        final var created = workingDirectory.mkdir();
-        if (created) {
+        if (workingDirectory.mkdir()) {
             return workingDirectory;
         }
-        throw new RuntimeException("Could not create the working directory"); // TODO: improve this!
-    }
-
-
-    /**
-     * Executes the pre-run command.
-     *
-     * @param workingDirectory The {@link File} representing the working directory.
-     * @param code             The code to be run.
-     */
-    private void preRun(final File workingDirectory, final String code) {
-        // The command is the pre-run command, together with the arguments for it, together with the code to be run.
-        final var command = Stream
-                .of(
-                        Stream.of(preRunCommand),
-                        preRunArgs.stream().filter(StringUtils::hasText),
-                        Stream.of(code)
-                )
-                .flatMap(Function.identity())
-                .collect(Collectors.toList());
-
-        // Once the command is created, create the process.
-        final var processBuilder = new ProcessBuilder()
-                .directory(workingDirectory)
-                .command(command);
-
-        try {
-            // Start the process.
-            final var process = processBuilder.start();
-            try {
-                // Wait till it finishes, or times out.
-                process.waitFor(preRunCommandTimeout, TimeUnit.MILLISECONDS);
-            } catch (final InterruptedException e) {
-                // In case it timed out, then throw an Exception as normal execution cannot be continued.
-                throw new RuntimeException("Pre-run process could not be completed!"); // TODO: improve this!
-            }
-            // If reached here, the process has finished.
-            if (process.exitValue() != 0) {
-                if (continueOnPreRunNonZeroExitCode) {
-                    LOGGER.warn("The pre-run process returned a non-zero exit value.");
-                } else {
-                    throw new RuntimeException("Pre-run process did not terminate with a zero exit value"); // TODO: improve this!
-                }
-            }
-        } catch (final IOException e) {
-            throw new UncheckedIOException(e); // TODO: improve this!
-        }
+        throw new WorkingDirectoryException("Could not create the working directory"); // TODO: retry?
     }
 
     /**
-     * Runs the code and returns a {@link Function} that given an {@link ExecutionRequest},
-     * returns an {@link ExecutionResult}.
+     * Runs the code, using the inputs, language and timeout in the given {@link ExecutionRequest}
+     * and returns the corresponding {@link ExecutionResult}.
      *
-     * @param workingDirectory The {@link File} representing the working directory.
-     * @param args             The inputs {@link List} to be passed to the code to be run.
-     * @param timeout          The timeout for the execution.
-     * @return a {@link Function} that given an {@link ExecutionRequest}, returns an {@link ExecutionResult}.
-     * This {@link Function} may contain data about the execution that is performed within this method.
-     * Such data is used to create the {@link ExecutionResult}
+     * @param request          The {@link ExecutionRequest} to be processed.
+     * @param workingDirectory The {@link File} representing the working directory in which the process will run.
+     * @return The {@link ExecutionResult} that comes up from the execution.
      */
-    private Function<ExecutionRequest, ? extends ExecutionResult> runCode(
-            final File workingDirectory,
-            final List<String> args,
-            final long timeout) {
-        // The command is the runner command, together with the arguments for it, together with the inputs
-        final var command = Stream
-                .of(
-                        Stream.of(runnerCommand),
-                        runnerArgs.stream().filter(StringUtils::hasText),
-                        args.stream()
-                )
-                .flatMap(Function.identity())
-                .collect(Collectors.toList());
+    private ExecutionResult runCode(final ExecutionRequest request, final File workingDirectory) {
+        final var language = request.getLanguage();
+        final var program = Optional
+                .ofNullable(commands.get(language))
+                .orElseThrow(() -> new RuntimeException("No command for language " + language));
 
-        // Once the command is created, create the process.
+        final List<String> command = new LinkedList<>();
+        command.add(program);
+        command.addAll(request.getInputs());
+
         final var processBuilder = new ProcessBuilder()
                 .directory(workingDirectory)
                 .command(command);
+        final var environment = processBuilder.environment();
+        environment.put("CODE", request.getCode());
+        environment.put("TIMEOUT", Double.toString(request.getTimeout() / 1000d)); // TODO: BigDecimal?
+        environment.put("RESULT_FILE_NAME", RESULT_FILE_NAME);
 
+        final var processTimeout = Math.max(request.getTimeout(), this.processTimeout) + GRACE_MARGIN;
         try {
             // Start the process.
             final var process = processBuilder.start();
-            if (executionHasCompleted(process, timeout)) {
-                final var stdout = readLines(process.getInputStream());
-                final var stderr = readLines(process.getErrorStream());
-                final var exitCode = process.exitValue();
-                return req -> new FinishedExecutionResult(exitCode, stdout, stderr, req);
+            if (executionHasCompleted(process, processTimeout)) {
+                final var resultPath = new File(workingDirectory, RESULT_FILE_NAME).toPath();
+                final ProcessResult result = Files.lines(resultPath).findFirst()
+                        .flatMap(ProcessResult::fromString)
+                        .orElse(ProcessResult.UNKNOWN_ERROR);
+                return result.handleFinishedProcess(process, request);
             }
-            return TimedOutExecutionResult::new;
+            return new TimedOutExecutionResult(request);
         } catch (final IOException e) {
-            throw new UncheckedIOException(e); // TODO: improve this!
+            throw new UncheckedIOException("The execution failed unexpectedly", e); // TODO: define proper exception
         }
     }
 
@@ -258,28 +190,121 @@ public class OperatingSystemProcessCodeRunner implements CodeRunner, Initializin
             // Wait till it finishes, or times out.
             return process.waitFor(timeout, TimeUnit.MILLISECONDS);
         } catch (final InterruptedException e) {
+            LOGGER.warn("The execution was unexpectedly interrupted", e);
             return false; // If interrupted, return false.
         }
     }
 
-    /**
-     * Charset to be used to convert an {@link InputStream} into {@link String}s.
-     */
-    private static final Charset INPUT_STREAM_CHARSET = Charset.forName("UTF-8"); // TODO: make it a param?
 
     /**
-     * Converts the given {@code inputStream} into a {@link List} of {@link String},
-     * where each element of the {@link List} is a line in the {@link InputStream}.
-     *
-     * @param inputStream The {@link InputStream} to be read.
-     * @return A {@link List} with the read lines.
-     * @throws UncheckedIOException If any {@link IOException} occurs while reading the {@link InputStream}.
+     * Enum containing the possible results of a process.
      */
-    private static List<String> readLines(final InputStream inputStream) throws UncheckedIOException {
-        try (final var bufferedReader = new BufferedReader(new InputStreamReader(inputStream, INPUT_STREAM_CHARSET))) {
-            return bufferedReader.lines().collect(Collectors.toList());
-        } catch (final IOException e) {
-            throw new UncheckedIOException(e); // TODO: define proper exception
+    public enum ProcessResult {
+        /**
+         * Indicates that the execution process completed as expected.
+         */
+        COMPLETED {
+            @Override
+            ExecutionResult handleFinishedProcess(final Process process, final ExecutionRequest executionRequest) {
+                return new FinishedExecutionResult(
+                        process.exitValue(),
+                        readLines(process.getInputStream()),
+                        readLines(process.getErrorStream()),
+                        executionRequest
+                );
+            }
+        },
+        /**
+         * Indicates that the execution timed-out (i.e the running phase).
+         */
+        TIMEOUT {
+            @Override
+            ExecutionResult handleFinishedProcess(final Process process, final ExecutionRequest executionRequest) {
+                return new TimedOutExecutionResult(executionRequest);
+            }
+        },
+        /**
+         * Indicates that the compilation phase failed (i.e the code could not be compiled).
+         */
+        COMPILE_ERROR {
+            @Override
+            ExecutionResult handleFinishedProcess(final Process process, final ExecutionRequest executionRequest) {
+                return new CompileErrorExecutionResult(
+                        readLines(process.getErrorStream()),
+                        executionRequest
+                );
+            }
+        },
+        /**
+         * Indicates that there was an error while initializing. This is an unexpected situation.
+         */
+        INITIALIZATION_ERROR {
+            @Override
+            ExecutionResult handleFinishedProcess(final Process process, final ExecutionRequest executionRequest) {
+                return new InitializationErrorExecutionResult(executionRequest);
+            }
+        },
+        /**
+         * Indicates that an unexpected error (different from the rest of this enum's error values) occurred.
+         */
+        UNKNOWN_ERROR {
+            @Override
+            ExecutionResult handleFinishedProcess(final Process process, final ExecutionRequest executionRequest) {
+                return new UnknownErrorExecutionResult(executionRequest);
+            }
+        },
+        ;
+
+
+        /**
+         * Handles the given {@code process} once it has finished.
+         *
+         * @param process          The {@link Process} to be handled.
+         * @param executionRequest The {@link ExecutionRequest} that made this process start.
+         * @return The {@link ExecutionResult} that comes from the given {@code process}.
+         * @apiNote This method assumes that the given process has finished.
+         */
+        /* package */
+        abstract ExecutionResult handleFinishedProcess(final Process process, final ExecutionRequest executionRequest);
+
+        /**
+         * Charset to be used to convert an {@link InputStream} into {@link String}s.
+         */
+        private static final Charset INPUT_STREAM_CHARSET = Charset.forName("UTF-8"); // TODO: make it a param?
+
+
+        /**
+         * Converts the given {@code inputStream} into a {@link List} of {@link String},
+         * where each element of the {@link List} is a line in the {@link InputStream}.
+         *
+         * @param inputStream The {@link InputStream} to be read.
+         * @return A {@link List} with the read lines.
+         * @throws UncheckedIOException If any {@link IOException} occurs while reading the {@link InputStream}.
+         */
+        private static List<String> readLines(final InputStream inputStream) throws UncheckedIOException {
+            try (final var bufferedReader = new BufferedReader(new InputStreamReader(inputStream, INPUT_STREAM_CHARSET))) {
+                return bufferedReader.lines().collect(Collectors.toList());
+            } catch (final IOException e) {
+                throw new UncheckedIOException(e); // TODO: define proper exception
+            }
+        }
+
+
+        /**
+         * Creates a {@link ProcessResult} from the given {@link String} {@code value}.
+         *
+         * @param value The {@link String} used to search for the {@link ProcessResult} to be returned.
+         * @return An {@link Optional} containing the {@link ProcessResult} corresponding to the given {@code value}
+         * if it exists, or empty otherwise.
+         */
+        /* package */
+        static Optional<ProcessResult> fromString(final String value) {
+            try {
+                return Optional.of(valueOf(value.toUpperCase()));
+            } catch (final IllegalArgumentException e) {
+                LOGGER.warn("An unexpected value (${}) was received", value);
+                return Optional.empty();
+            }
         }
     }
 }

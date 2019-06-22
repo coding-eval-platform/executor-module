@@ -1,8 +1,6 @@
 package ar.edu.itba.cep.executor_service.commands.dto;
 
-import ar.edu.itba.cep.executor_service.models.ExecutionResult;
-import ar.edu.itba.cep.executor_service.models.FinishedExecutionResult;
-import ar.edu.itba.cep.executor_service.models.TimedOutExecutionResult;
+import ar.edu.itba.cep.executor_service.models.*;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import org.springframework.util.Assert;
@@ -22,6 +20,18 @@ import org.springframework.util.Assert;
         @JsonSubTypes.Type(
                 value = TimedOutExecutionResultDto.class,
                 name = ExecutionResultDto.TIMED_OUT_STRING_VALUE
+        ),
+        @JsonSubTypes.Type(
+                value = CompileErrorExecutionResult.class,
+                name = ExecutionResultDto.COMPILED_ERROR_STRING_VALUE
+        ),
+        @JsonSubTypes.Type(
+                value = InitializationErrorExecutionResult.class,
+                name = ExecutionResultDto.INITIALIZATION_ERROR_STRING_VALUE
+        ),
+        @JsonSubTypes.Type(
+                value = UnknownErrorExecutionResult.class,
+                name = ExecutionResultDto.UNKNOWN_ERROR_STRING_VALUE
         )
 })
 public abstract class ExecutionResultDto<R extends ExecutionResult> {
@@ -34,6 +44,18 @@ public abstract class ExecutionResultDto<R extends ExecutionResult> {
      * Value that will be included in JSONs created from a {@link TimedOutExecutionResult}.
      */
     /* package */ static final String TIMED_OUT_STRING_VALUE = "TIMED_OUT";
+    /**
+     * Value that will be included in JSONs created from a {@link FinishedExecutionResultDto}.
+     */
+    /* package */ static final String COMPILED_ERROR_STRING_VALUE = "COMPILE_ERROR";
+    /**
+     * Value that will be included in JSONs created from a {@link FinishedExecutionResultDto}.
+     */
+    /* package */ static final String INITIALIZATION_ERROR_STRING_VALUE = "INITIALIZATION_ERROR";
+    /**
+     * Value that will be included in JSONs created from a {@link FinishedExecutionResultDto}.
+     */
+    /* package */ static final String UNKNOWN_ERROR_STRING_VALUE = "UNKNOWN_ERROR";
 
 
     /**
@@ -66,13 +88,24 @@ public abstract class ExecutionResultDto<R extends ExecutionResult> {
      * @param executionResult The {@link ExecutionResult} from which the created {@link ExecutionRequestDto} will
      *                        be created.
      * @return The created {@link ExecutionRequestDto}.
+     * @throws IllegalArgumentException If the given {@code executionResult} is {@code null}.
      */
-    public static ExecutionResultDto createFor(final ExecutionResult executionResult) {
+    public static ExecutionResultDto createFor(final ExecutionResult executionResult) throws IllegalArgumentException {
+        Assert.notNull(executionResult, "The execution result must not be null");
         if (executionResult instanceof FinishedExecutionResult) {
             return new FinishedExecutionResultDto((FinishedExecutionResult) executionResult);
         }
         if (executionResult instanceof TimedOutExecutionResult) {
             return new TimedOutExecutionResultDto((TimedOutExecutionResult) executionResult);
+        }
+        if (executionResult instanceof CompileErrorExecutionResult) {
+            return new CompileErrorExecutionResultDto((CompileErrorExecutionResult) executionResult);
+        }
+        if (executionResult instanceof InitializationErrorExecutionResult) {
+            return new InitializationErrorExecutionResultDto((InitializationErrorExecutionResult) executionResult);
+        }
+        if (executionResult instanceof UnknownErrorExecutionResult) {
+            return new UnknownErrorExecutionResultDto((UnknownErrorExecutionResult) executionResult);
         }
         throw new IllegalArgumentException("Unknown subtype");
     }
