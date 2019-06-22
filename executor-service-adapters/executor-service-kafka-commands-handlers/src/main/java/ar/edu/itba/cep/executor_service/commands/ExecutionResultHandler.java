@@ -9,8 +9,6 @@ import com.bellotapps.the_messenger.producer.MessageProducer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-// TODO: finish with this later!
-
 /**
  * Component in charge of returning a response with an {@link ExecutionResult}
  * to the one that send an {@link ar.edu.itba.cep.executor_service.models.ExecutionRequest}.
