@@ -8,6 +8,12 @@ Service in charge of running code.
 - Compile (when needed) and run code
 - Notify execution result
 
+### Supported programming languages
+
+- Java
+- Ruby
+- C
+
 
 ## Getting started
 
@@ -198,6 +204,15 @@ spring.kafka.bootstrap-servers:localhost:9092
 Note: These properties can be filled with the values of a local cluster, or with the values of a remote cluster.
 
 
+#### Timeout
+
+This service relies on the `timeout` program of the `coreutils` package. You can install it with the following command:
+
+```bash
+$ brew install coreutils
+```
+
+
 ### Build
 
 1. Install artifacts:
@@ -237,6 +252,90 @@ java \
 	--spring.profiles.active=dev
 ```
 
+## Adding support for new languages
+
+Adding support for a new language is very straightforward. Just follow the following steps:
+
+1. Add a new value in the `Language` enum. This value will represent the new language. Then enum can be found in the models module. Note that this will enable a new property (`code-runner.commands.<new-language>`).
+
+2. Set the `code-runner.commands.<new-language>` property with the command to be run by this service, which will run the said command setting several environment variables that will be explained in the next section. Note that this command must be a valid OS command.
+
+### Runner command
+
+The runner command is the program to be executed to run the code. It is a program to run programs. There must be a runner command for each supported language. This command must be a valid OS command (you can check this by executing the command through a clean shell).
+
+This program will be executed by this service setting the following environment variables:
+
+
+| Variable              | Description                                                   |
+|:----------------------|:--------------------------------------------------------------|
+| CODE                  | The code to be run.                                           |
+| TIMEOUT               | The timeout given to run the code (just the execution phase). |
+| RESULT\_FILE\_NAME    | The file name where results must be stored.                   |
+
+
+The `RESULT_FILE_NAME` contains the name of the file where the execution result must be stored. The following values are accepted (any other will result in an error):
+
+| Value                 | Description                                               |
+|:----------------------|:----------------------------------------------------------|
+| COMPLETED             | The command finished successfully.                        |
+| TIMEOUT               | The execution timed-out.                                  |
+| COMPILE_ERROR         | The code did not compile (only for compiled languages).   |
+| INITIALIZATION_ERROR  | There was an error while initializing the command.        |
+| UNKNOWN_ERROR         | An unexpected error occured.                              |
+
+
+Note that this command can be any executable. You can write a bash script, a python program, or even a binary built from a C program, to be called by this service.
+
+
+### Runner command script template
+
+There is a bash script template that can be used to create new executor programs. You can find it in the `
+<project-root>/executor-service-application/executors` directory. The file is called `template.sh`.
+
+
+### Example: adding python
+
+The following is a tutorial to add Python as a supported language.
+
+1. Add the `PYTHON` value to the `Language` enum and rebuild the project.
+
+2. Copy the `template.sh` file. Store it as `<project-root>/executor-service-application/executors/python.sh`
+
+3. Change the `initialize_code` function in order to store the code in a `main.py`. It should be something like this:
+
+    ```bash
+    function initialize_code {
+        local CODE=$1
+        cat <<< "${CODE}" > ./main.py
+    }
+    ```
+
+4. Remove the `compile_code` function declaration and call. Python is not compiled
+
+5. Change the `run_code` function in order to run the `main.py` file. It should be something like this:
+
+    ```bash
+    function run_code {
+        local TIMEOUT=$1
+        shift # Shift function arguments as the first one contains the timeout
+        timeout ${TIMEOUT} python main.py "$@"
+    }
+    ```
+6. Run the service setting the `code-runner.process-timeout.commands.python` property with the following value: `<project-root>/executor-service-application/executors/python.sh`. For example:
+
+    ```
+    java \
+        -Dspring.kafka.bootstrap-servers=localhost:9092 \
+        -jar <project-root>/executor-service-application/target/executor-service-application-0.0.1-SNAPSHOT.jar \
+        --spring.profiles.active=dev
+        --code-runner.process-timeout.commands.python=`<project-root>/executor-service-application/executors/python.sh`
+    ```
+7. Enjoy python as a supported language.
+
+**Note:** This tutorial assumes that the python interpreter is installed.
+
+
 
 ## Use with Docker
 
@@ -264,6 +363,26 @@ Note that you have to use the same tag you used to create the image.
 
 Note that you will have to link the container with another container (or the host machine)
 in which both a Kafka cluster is running.
+
+### New programming languages
+
+In case support for a new programming language is added, don't forget to set up the `Dockerfile` appropriately. This includes copying the necessary executable, setting the corresponding properties, and installing the necessary software.
+
+For example, continuing with the Python's tutorial, add the following lines to the `Dockerfile`:
+
+
+```Dockerfile
+ENV PYTHON_RUNNER=run-python.sh
+COPY ${EXECUTORS_PATH}/python.sh $RUNNERS_PATH/$PYTHON_RUNNER
+RUN set -eux; \
+        echo "$RUNNERS_PREFIX.python=$PYTHON_RUNNER" >> $CONFIG_LOCATION/$RUNNERS_CONFIG_FILE;
+RUN set -eux; \
+        apt-get update; \
+        apt-get install -y python;
+```
+
+**Note:** If you see the `Dockerfile` you will notice that you can put each of the previous lines in the corresponding section of the file.
+
 
 
 ## CI/CD Workflow
