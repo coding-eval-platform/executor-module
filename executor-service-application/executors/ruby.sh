@@ -128,7 +128,7 @@ function report_completed {
 function initialize_code {
     local CODE=$1
 
-    cat <<< "${CODE}" > ./main.rb # Store whatever the CODE variable has in a Main.java file in the current directory
+    cat <<< "${CODE}" > ./main.rb # Store whatever the CODE variable has in a ruby.rb file in the current directory
 }
 
 # ---
