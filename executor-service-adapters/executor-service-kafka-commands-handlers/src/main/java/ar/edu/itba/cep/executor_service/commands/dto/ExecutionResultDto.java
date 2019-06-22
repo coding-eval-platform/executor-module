@@ -22,17 +22,17 @@ import org.springframework.util.Assert;
                 name = ExecutionResultDto.TIMED_OUT_STRING_VALUE
         ),
         @JsonSubTypes.Type(
-                value = CompileErrorExecutionResult.class,
+                value = CompileErrorExecutionResultDto.class,
                 name = ExecutionResultDto.COMPILED_ERROR_STRING_VALUE
         ),
         @JsonSubTypes.Type(
-                value = InitializationErrorExecutionResult.class,
+                value = InitializationErrorExecutionResultDto.class,
                 name = ExecutionResultDto.INITIALIZATION_ERROR_STRING_VALUE
         ),
         @JsonSubTypes.Type(
-                value = UnknownErrorExecutionResult.class,
+                value = UnknownErrorExecutionResultDto.class,
                 name = ExecutionResultDto.UNKNOWN_ERROR_STRING_VALUE
-        )
+        ),
 })
 public abstract class ExecutionResultDto<R extends ExecutionResult> {
 
