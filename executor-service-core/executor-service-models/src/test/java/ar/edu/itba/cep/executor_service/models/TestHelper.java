@@ -75,9 +75,10 @@ class TestHelper {
      */
     /* package */
     static List<String> validInputOutputList() {
+        final var amountOfWords = (int) Faker.instance().number().numberBetween(0L, STRING_LISTS_SIZE);
         return Faker.instance()
                 .lorem()
-                .words(STRING_LISTS_SIZE);
+                .words(amountOfWords);
     }
 
     /**
