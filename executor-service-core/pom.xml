@@ -19,7 +19,6 @@
     </properties>
 
     <modules>
-        <module>executor-service-models</module>
         <module>executor-service-domain</module>
         <module>executor-service-ports</module>
     </modules>

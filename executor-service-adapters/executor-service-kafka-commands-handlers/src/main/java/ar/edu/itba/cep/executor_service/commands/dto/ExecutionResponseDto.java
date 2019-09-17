@@ -1,34 +1,37 @@
 package ar.edu.itba.cep.executor_service.commands.dto;
 
-import ar.edu.itba.cep.executor_service.models.FinishedExecutionResult;
+import ar.edu.itba.cep.executor.models.ExecutionResponse;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.AllArgsConstructor;
 
 import java.util.List;
 
 /**
- * An {@link ExecutionRequestDto} for {@link FinishedExecutionResult}s.
+ * Data transfer object for receiving {@link ExecutionResponse}s.
  */
-/* package */ class FinishedExecutionResultDto extends ExecutionResultDto<FinishedExecutionResult> {
+@AllArgsConstructor(staticName = "build")
+public class ExecutionResponseDto {
+
+    /**
+     * The {@link ExecutionResponse} being wrapped by this DTO.
+     */
+    private final ExecutionResponse executionResponse;
 
 
     /**
-     * Constructor.
-     *
-     * @param finishedExecutionResult The {@link FinishedExecutionResult} being wrapped by this DTO.
-     * @throws IllegalArgumentException If the given {@code finishedExecutionResult} is {@code null}.
+     * @return The execution's result.
      */
-    /* package */ FinishedExecutionResultDto(final FinishedExecutionResult finishedExecutionResult)
-            throws IllegalArgumentException {
-        super(finishedExecutionResult);
+    @JsonProperty(value = "resul", access = JsonProperty.Access.READ_ONLY)
+    public ExecutionResponse.ExecutionResult getResult() {
+        return executionResponse.getResult();
     }
-
 
     /**
      * @return The execution's exit code.
      */
     @JsonProperty(value = "exitCode", access = JsonProperty.Access.READ_ONLY)
     public int getExitCode() {
-        return getExecutionResult().getExitCode();
+        return executionResponse.getExitCode();
     }
 
     /**
@@ -37,7 +40,7 @@ import java.util.List;
      */
     @JsonProperty(value = "stdout", access = JsonProperty.Access.READ_ONLY)
     public List<String> getStdout() {
-        return getExecutionResult().getStdout();
+        return executionResponse.getStdout();
     }
 
     /**
@@ -46,6 +49,6 @@ import java.util.List;
      */
     @JsonProperty(value = "stderr", access = JsonProperty.Access.READ_ONLY)
     public List<String> getStderr() {
-        return getExecutionResult().getStderr();
+        return executionResponse.getStderr();
     }
 }

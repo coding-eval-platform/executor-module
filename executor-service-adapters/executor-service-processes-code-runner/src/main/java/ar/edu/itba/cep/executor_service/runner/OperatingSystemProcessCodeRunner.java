@@ -1,6 +1,8 @@
 package ar.edu.itba.cep.executor_service.runner;
 
-import ar.edu.itba.cep.executor_service.models.*;
+import ar.edu.itba.cep.executor.models.ExecutionRequest;
+import ar.edu.itba.cep.executor.models.ExecutionResponse;
+import ar.edu.itba.cep.executor.models.Language;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InitializingBean;
@@ -8,6 +10,7 @@ import org.springframework.util.Assert;
 
 import java.io.*;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -37,6 +40,11 @@ public class OperatingSystemProcessCodeRunner implements CodeRunner, Initializin
      * will wait any runner sub-processes till it consider the child to be timed-out.
      */
     private final static long GRACE_MARGIN = 10000; // TODO: make this configurable?
+
+    /**
+     * Charset to be used to convert an {@link InputStream} into {@link String}s.
+     */
+    private static final Charset INPUT_STREAM_CHARSET = StandardCharsets.UTF_8; // TODO: make it a param?
 
 
     /**
@@ -94,15 +102,9 @@ public class OperatingSystemProcessCodeRunner implements CodeRunner, Initializin
         }
     }
 
-    /**
-     * Processes the given {@code executionRequest}.
-     *
-     * @param executionRequest The {@link ExecutionRequest} to be processed.
-     * @return The {@link ExecutionResult}.
-     * @throws IllegalArgumentException if the given {@code executionRequest} is {@code null}.
-     */
+
     @Override
-    public ExecutionResult processExecutionRequest(final ExecutionRequest executionRequest)
+    public ExecutionResponse processExecutionRequest(final ExecutionRequest executionRequest)
             throws IllegalArgumentException {
         Assert.notNull(executionRequest, "The execution request must not be null");
         final var workingDirectory = createWorkingDirectory(); // TODO: should we lock the working directory?
@@ -132,13 +134,13 @@ public class OperatingSystemProcessCodeRunner implements CodeRunner, Initializin
 
     /**
      * Runs the code, using the inputs, language and timeout in the given {@link ExecutionRequest}
-     * and returns the corresponding {@link ExecutionResult}.
+     * and returns the corresponding {@link ExecutionResponse}.
      *
      * @param request          The {@link ExecutionRequest} to be processed.
      * @param workingDirectory The {@link File} representing the working directory in which the process will run.
-     * @return The {@link ExecutionResult} that comes up from the execution.
+     * @return The {@link ExecutionResponse} that comes up from the execution.
      */
-    private ExecutionResult runCode(final ExecutionRequest request, final File workingDirectory) {
+    private ExecutionResponse runCode(final ExecutionRequest request, final File workingDirectory) {
         final var language = request.getLanguage();
         final var program = Optional
                 .ofNullable(commands.get(language))
@@ -150,7 +152,7 @@ public class OperatingSystemProcessCodeRunner implements CodeRunner, Initializin
 
         final List<String> command = new LinkedList<>();
         command.add(program);
-        command.addAll(request.getInputs());
+        command.addAll(request.getProgramArguments());
 
         final var processBuilder = new ProcessBuilder()
                 .directory(workingDirectory)
@@ -162,16 +164,17 @@ public class OperatingSystemProcessCodeRunner implements CodeRunner, Initializin
 
         final var processTimeout = Math.max(executionTimeout, this.processTimeout) + GRACE_MARGIN;
         try {
-            // Start the process.
-            final var process = processBuilder.start();
-            if (executionHasCompleted(process, processTimeout)) {
-                final var resultPath = new File(workingDirectory, RESULT_FILE_NAME).toPath();
-                final ProcessResult result = Files.lines(resultPath).findFirst()
-                        .flatMap(ProcessResult::fromString)
-                        .orElse(ProcessResult.UNKNOWN_ERROR);
-                return result.handleFinishedProcess(process, request);
-            }
-            return new TimedOutExecutionResult(request);
+            final var process = processBuilder.start(); // Start the process.
+            writeLines(request.getStdin(), process.getOutputStream()); // Send stdin in the request to the process.
+            final var finished = executionHasCompleted(process, processTimeout); // Wait till finish.
+            // Build the corresponding response.
+            return new ExecutionResponse(
+                    request,
+                    finished ? retrieveResult(workingDirectory) : ExecutionResponse.ExecutionResult.TIMEOUT,
+                    process.exitValue(),
+                    readLines(process.getInputStream()),
+                    readLines(process.getErrorStream())
+            );
         } catch (final IOException e) {
             throw new UncheckedIOException("The execution failed unexpectedly", e); // TODO: define proper exception
         }
@@ -199,116 +202,63 @@ public class OperatingSystemProcessCodeRunner implements CodeRunner, Initializin
         }
     }
 
+    /**
+     * Retrieves the {@link ExecutionResponse.ExecutionResult}
+     * from the given {@code workingDirectory}
+     *
+     * @param workingDirectory The {@link File} representing the working directory in which the process has run.
+     * @return The {@link ExecutionResponse.ExecutionResult}
+     * @throws IOException If any IO error occurs while retrieving the value.
+     */
+    private static ExecutionResponse.ExecutionResult retrieveResult(final File workingDirectory) throws IOException {
+        final var resultPath = new File(workingDirectory, RESULT_FILE_NAME).toPath();
+        return Files.lines(resultPath).findFirst()
+                .flatMap(OperatingSystemProcessCodeRunner::fromString)
+                .orElse(ExecutionResponse.ExecutionResult.UNKNOWN_ERROR);
+    }
 
     /**
-     * Enum containing the possible results of a process.
+     * Converts the given {@code inputStream} into a {@link List} of {@link String},
+     * where each element of the {@link List} is a line in the {@link InputStream}.
+     *
+     * @param inputStream The {@link InputStream} to be read.
+     * @return A {@link List} with the read lines.
+     * @throws UncheckedIOException If any {@link IOException} occurs while reading the {@link InputStream}.
      */
-    public enum ProcessResult {
-        /**
-         * Indicates that the execution process completed as expected.
-         */
-        COMPLETED {
-            @Override
-            ExecutionResult handleFinishedProcess(final Process process, final ExecutionRequest executionRequest) {
-                return new FinishedExecutionResult(
-                        process.exitValue(),
-                        readLines(process.getInputStream()),
-                        readLines(process.getErrorStream()),
-                        executionRequest
-                );
-            }
-        },
-        /**
-         * Indicates that the execution timed-out (i.e the running phase).
-         */
-        TIMEOUT {
-            @Override
-            ExecutionResult handleFinishedProcess(final Process process, final ExecutionRequest executionRequest) {
-                return new TimedOutExecutionResult(executionRequest);
-            }
-        },
-        /**
-         * Indicates that the compilation phase failed (i.e the code could not be compiled).
-         */
-        COMPILE_ERROR {
-            @Override
-            ExecutionResult handleFinishedProcess(final Process process, final ExecutionRequest executionRequest) {
-                return new CompileErrorExecutionResult(
-                        readLines(process.getErrorStream()),
-                        executionRequest
-                );
-            }
-        },
-        /**
-         * Indicates that there was an error while initializing. This is an unexpected situation.
-         */
-        INITIALIZATION_ERROR {
-            @Override
-            ExecutionResult handleFinishedProcess(final Process process, final ExecutionRequest executionRequest) {
-                return new InitializationErrorExecutionResult(executionRequest);
-            }
-        },
-        /**
-         * Indicates that an unexpected error (different from the rest of this enum's error values) occurred.
-         */
-        UNKNOWN_ERROR {
-            @Override
-            ExecutionResult handleFinishedProcess(final Process process, final ExecutionRequest executionRequest) {
-                return new UnknownErrorExecutionResult(executionRequest);
-            }
-        },
-        ;
-
-
-        /**
-         * Handles the given {@code process} once it has finished.
-         *
-         * @param process          The {@link Process} to be handled.
-         * @param executionRequest The {@link ExecutionRequest} that made this process start.
-         * @return The {@link ExecutionResult} that comes from the given {@code process}.
-         * @apiNote This method assumes that the given process has finished.
-         */
-        /* package */
-        abstract ExecutionResult handleFinishedProcess(final Process process, final ExecutionRequest executionRequest);
-
-        /**
-         * Charset to be used to convert an {@link InputStream} into {@link String}s.
-         */
-        private static final Charset INPUT_STREAM_CHARSET = Charset.forName("UTF-8"); // TODO: make it a param?
-
-
-        /**
-         * Converts the given {@code inputStream} into a {@link List} of {@link String},
-         * where each element of the {@link List} is a line in the {@link InputStream}.
-         *
-         * @param inputStream The {@link InputStream} to be read.
-         * @return A {@link List} with the read lines.
-         * @throws UncheckedIOException If any {@link IOException} occurs while reading the {@link InputStream}.
-         */
-        private static List<String> readLines(final InputStream inputStream) throws UncheckedIOException {
-            try (final var bufferedReader = new BufferedReader(new InputStreamReader(inputStream, INPUT_STREAM_CHARSET))) {
-                return bufferedReader.lines().collect(Collectors.toList());
-            } catch (final IOException e) {
-                throw new UncheckedIOException(e); // TODO: define proper exception
-            }
+    private static List<String> readLines(final InputStream inputStream) throws UncheckedIOException {
+        try (final var bufferedReader = new BufferedReader(new InputStreamReader(inputStream, INPUT_STREAM_CHARSET))) {
+            return bufferedReader.lines().collect(Collectors.toList());
+        } catch (final IOException e) {
+            throw new UncheckedIOException(e); // TODO: define proper exception
         }
+    }
 
+    /**
+     * Writes the {@link String}s in the given {@code lines} {@link List} as lines in the given {@code outputStream}.
+     *
+     * @param lines        The {@link String}s to be written as lines in the given {@code outputStream}.
+     * @param outputStream The {@link OutputStream} to which the lines will be written.
+     */
+    private static void writeLines(final List<String> lines, final OutputStream outputStream) {
+        try (final PrintWriter printWriter = new PrintWriter(outputStream, true)) {
+            lines.forEach(printWriter::println);
+        }
+    }
 
-        /**
-         * Creates a {@link ProcessResult} from the given {@link String} {@code value}.
-         *
-         * @param value The {@link String} used to search for the {@link ProcessResult} to be returned.
-         * @return An {@link Optional} containing the {@link ProcessResult} corresponding to the given {@code value}
-         * if it exists, or empty otherwise.
-         */
-        /* package */
-        static Optional<ProcessResult> fromString(final String value) {
-            try {
-                return Optional.of(valueOf(value.toUpperCase()));
-            } catch (final IllegalArgumentException e) {
-                LOGGER.warn("An unexpected value (${}) was received", value);
-                return Optional.empty();
-            }
+    /**
+     * Returns the {@link ExecutionResponse.ExecutionResult} corresponding to the given {@code string},
+     * wrapped in an {@link Optional}.
+     *
+     * @param string The {@link String} value of the the {@link ExecutionResponse.ExecutionResult} being returned.
+     * @return An {@link Optional} holding the {@link ExecutionResponse.ExecutionResult} if there is such for the
+     * given {@code string}, or empty otherwise.
+     */
+    private static Optional<ExecutionResponse.ExecutionResult> fromString(final String string) {
+        try {
+            return Optional.ofNullable(ExecutionResponse.ExecutionResult.fromString(string));
+        } catch (final IllegalArgumentException ignored) {
+            LOGGER.warn("An unexpected value (${}) was received", string);
+            return Optional.empty();
         }
     }
 }

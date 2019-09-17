@@ -1,7 +1,7 @@
 package ar.edu.itba.cep.executor_service.commands.config;
 
 import ar.edu.itba.cep.executor_service.commands.dto.ExecutionRequestDto;
-import ar.edu.itba.cep.executor_service.commands.dto.ExecutionResultDto;
+import ar.edu.itba.cep.executor_service.commands.dto.ExecutionResponseDto;
 import com.bellotapps.the_messenger.commons.Message;
 import com.bellotapps.the_messenger.commons.payload.PayloadDeserializer;
 import com.bellotapps.the_messenger.commons.payload.PayloadSerializer;
@@ -27,7 +27,7 @@ import org.springframework.kafka.core.KafkaTemplate;
         "ar.edu.itba.cep.executor_service.commands"
 })
 @EnableConfigurationProperties({
-        ExecutionResultHandlerProperties.class,
+        ExecutionResponseHandlerProperties.class,
 })
 public class KafkaCommandsHandlersConfig {
 
@@ -50,11 +50,11 @@ public class KafkaCommandsHandlersConfig {
     /**
      * Creates a bean of {@link PayloadSerializer} of {@link ExecutionRequestDto}.
      *
-     * @return A bean of {@link JacksonJsonPayloadSerializer} of {@link ExecutionResultDto}.
+     * @return A bean of {@link JacksonJsonPayloadSerializer} of {@link ExecutionResponseDto}.
      */
     @Bean
-    public PayloadSerializer<ExecutionResultDto> executionResultDtoPayloadSerializer() {
-        return new JacksonJsonPayloadSerializer<>(new ObjectMapper(), ExecutionResultDto.class);
+    public PayloadSerializer<ExecutionResponseDto> executionResponseDtoPayloadSerializer() {
+        return new JacksonJsonPayloadSerializer<>(new ObjectMapper(), ExecutionResponseDto.class);
     }
 
     /**
@@ -70,17 +70,17 @@ public class KafkaCommandsHandlersConfig {
     }
 
     /**
-     * Creates a bean of {@link GenericMessageBuilderFactory} of {@link ExecutionResultDto}.
+     * Creates a bean of {@link GenericMessageBuilderFactory} of {@link ExecutionResponseDto}.
      *
-     * @param executionResultDtoPayloadSerializer A {@link PayloadSerializer} of {@link ExecutionResultDto}.
-     * @return A bean of {@link MessageBuilderFactory} of {@link ExecutionResultDto}.
+     * @param executionResponseDtoPayloadSerializer A {@link PayloadSerializer} of {@link ExecutionResponseDto}.
+     * @return A bean of {@link MessageBuilderFactory} of {@link ExecutionResponseDto}.
      */
     @Bean
-    public MessageBuilderFactory<ExecutionResultDto> executionResultMessageBuilderFactory(
-            final PayloadSerializer<ExecutionResultDto> executionResultDtoPayloadSerializer) {
+    public MessageBuilderFactory<ExecutionResponseDto> executionResponseMessageBuilderFactory(
+            final PayloadSerializer<ExecutionResponseDto> executionResponseDtoPayloadSerializer) {
         return new GenericMessageBuilderFactory<>(
                 "ExecutorService",
-                executionResultDtoPayloadSerializer,
+                executionResponseDtoPayloadSerializer,
                 JacksonMessage::new
         );
     }

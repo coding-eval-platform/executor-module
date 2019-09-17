@@ -22,6 +22,7 @@
         <!-- Versions -->
         <com.bellotapps.the-messenger.version>0.0.1-RELEASE</com.bellotapps.the-messenger.version>
         <com.spotify.dockerfile-maven.version>1.4.10</com.spotify.dockerfile-maven.version>
+        <ar.edu.itba.cep.commons.version>0.0.4-SNAPSHOT</ar.edu.itba.cep.commons.version>
     </properties>
 
     <modules>
@@ -32,6 +33,13 @@
 
     <dependencyManagement>
         <dependencies>
+            <dependency>
+                <groupId>ar.edu.itba.cep</groupId>
+                <artifactId>commons-bom</artifactId>
+                <version>${ar.edu.itba.cep.commons.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
             <dependency>
                 <groupId>com.bellotapps.the-messenger</groupId>
                 <artifactId>bill-of-materials</artifactId>
