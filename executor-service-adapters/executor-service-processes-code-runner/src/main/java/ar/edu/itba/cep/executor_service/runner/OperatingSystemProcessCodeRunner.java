@@ -174,7 +174,7 @@ public class OperatingSystemProcessCodeRunner implements CodeRunner, Initializin
                 .command(command);
         final var environment = processBuilder.environment();
         environment.put(CODE_ENV_VARIABLE, request.getCode());
-        environment.put(COMPILER_FLAGS_ENV_VARIABLE, request.getCompilerFlags());
+        environment.put(COMPILER_FLAGS_ENV_VARIABLE, Optional.ofNullable(request.getCompilerFlags()).orElse(""));
         environment.put(TIMEOUT_ENV_VARIABLE, Double.toString(executionTimeout / 1000d)); // TODO: BigDecimal?
         environment.put(RESULT_FILE_NAME_ENV_VARIABLE, RESULT_FILE_NAME);
 
