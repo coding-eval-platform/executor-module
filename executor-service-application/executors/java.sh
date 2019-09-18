@@ -134,10 +134,13 @@ function initialize_code {
 # ---
 # Compiles code.
 #
+# @param flags    ($1): The compiler flags.
 # @return 0 if any compiler error occurs, or any other value otherwise.
 # ---
 function compile_code {
-    javac ./Main.java > /dev/null
+    local COMPILER_FLAGS=$1;
+
+    javac ${COMPILER_FLAGS} ./Main.java > /dev/null
 }
 
 # ---
@@ -169,6 +172,10 @@ function run_code {
 # ---
 declare CODE;
 # ---
+# The compiler flags.
+# ---
+declare COMPILER_FLAGS;
+# ---
 # The timeout given to the program resulting from the givne code.
 # ---
 declare TIMEOUT;
@@ -182,7 +189,7 @@ declare RESULT_FILE_NAME;
 initialize_code "${CODE}" || report_initialization_error $? "${RESULT_FILE_NAME}"
 
 # Compilation
-compile_code || report_compile_error $? "${RESULT_FILE_NAME}"
+compile_code "${COMPILER_FLAGS}" || report_compile_error $? "${RESULT_FILE_NAME}"
 
 # Execution
 run_code "${TIMEOUT}" "$@" && report_completed "${RESULT_FILE_NAME}" || report_failed $? "${RESULT_FILE_NAME}"

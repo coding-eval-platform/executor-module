@@ -30,6 +30,23 @@ public class OperatingSystemProcessCodeRunner implements CodeRunner, Initializin
     private final static Logger LOGGER = LoggerFactory.getLogger(OperatingSystemProcessCodeRunner.class);
 
     /**
+     * The name of the environment variable in which the code is set.
+     */
+    private final static String CODE_ENV_VARIABLE = "CODE";
+    /**
+     * The name of the environment variable in which the compiler flags are set.
+     */
+    private final static String COMPILER_FLAGS_ENV_VARIABLE = "COMPILER_FLAGS";
+    /**
+     * The name of the environment variable in which the timeout is set.
+     */
+    private final static String TIMEOUT_ENV_VARIABLE = "TIMEOUT";
+    /**
+     * The name of the environment variable in which the result file name is set.
+     */
+    private final static String RESULT_FILE_NAME_ENV_VARIABLE = "RESULT_FILE_NAME";
+
+    /**
      * The name for the file where the execution result must be stored.
      */
     private final static String RESULT_FILE_NAME = "result"; // TODO: make this configurable?
@@ -52,13 +69,11 @@ public class OperatingSystemProcessCodeRunner implements CodeRunner, Initializin
      * New directories will be created here where each execution will be performed.
      */
     private final File baseWorkingDir;
-
     /**
      * Timeout to be given to the runner command process in case it hangs out.
      * This is different than the execution timeout, which is used to evaluate efficiency and performance of code.
      */
     private final long processTimeout;
-
     /**
      * A {@link Map} containing the commands to be used for each {@link Language}.
      * This commands can be OS shell native commands, shell script files, executable files, custom programs, etc.
@@ -158,9 +173,10 @@ public class OperatingSystemProcessCodeRunner implements CodeRunner, Initializin
                 .directory(workingDirectory)
                 .command(command);
         final var environment = processBuilder.environment();
-        environment.put("CODE", request.getCode());
-        environment.put("TIMEOUT", Double.toString(executionTimeout / 1000d)); // TODO: BigDecimal?
-        environment.put("RESULT_FILE_NAME", RESULT_FILE_NAME);
+        environment.put(CODE_ENV_VARIABLE, request.getCode());
+        environment.put(COMPILER_FLAGS_ENV_VARIABLE, request.getCompilerFlags());
+        environment.put(TIMEOUT_ENV_VARIABLE, Double.toString(executionTimeout / 1000d)); // TODO: BigDecimal?
+        environment.put(RESULT_FILE_NAME_ENV_VARIABLE, RESULT_FILE_NAME);
 
         final var processTimeout = Math.max(executionTimeout, this.processTimeout) + GRACE_MARGIN;
         try {
