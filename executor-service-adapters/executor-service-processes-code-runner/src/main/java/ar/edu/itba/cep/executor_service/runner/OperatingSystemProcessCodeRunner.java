@@ -169,7 +169,6 @@ public class OperatingSystemProcessCodeRunner implements CodeRunner, Initializin
             final var finished = executionHasCompleted(process, processTimeout); // Wait till finish.
             // Build the corresponding response.
             return new ExecutionResponse(
-                    request,
                     finished ? retrieveResult(workingDirectory) : ExecutionResponse.ExecutionResult.TIMEOUT,
                     process.exitValue(),
                     readLines(process.getInputStream()),
@@ -241,6 +240,7 @@ public class OperatingSystemProcessCodeRunner implements CodeRunner, Initializin
      */
     private static void writeLines(final List<String> lines, final OutputStream outputStream) {
         try (final PrintWriter printWriter = new PrintWriter(outputStream, true)) {
+            // Write all lines. If the list is empty, EOF is sent.
             lines.forEach(printWriter::println);
         }
     }

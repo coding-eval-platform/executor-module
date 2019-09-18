@@ -1,8 +1,8 @@
 package ar.edu.itba.cep.executor_service.commands;
 
+import ar.edu.itba.cep.executor.dtos.ExecutionResponseDto;
 import ar.edu.itba.cep.executor.models.ExecutionResponse;
 import ar.edu.itba.cep.executor_service.commands.config.ExecutionResponseHandlerProperties;
-import ar.edu.itba.cep.executor_service.commands.dto.ExecutionResponseDto;
 import com.bellotapps.the_messenger.commons.Message;
 import com.bellotapps.the_messenger.producer.MessageBuilderFactory;
 import com.bellotapps.the_messenger.producer.MessageProducer;
@@ -25,7 +25,7 @@ public class ExecutionResponseHandler {
      * A {@link MessageBuilderFactory} of {@link ExecutionResponseDto} that creates the
      * {@link com.bellotapps.the_messenger.producer.MessageBuilder} that can create the response {@link Message}s.
      */
-    private final MessageBuilderFactory<ExecutionResponseDto> executionResultMessageBuilderFactory;
+    private final MessageBuilderFactory<ExecutionResponseDto> executionResponseDtoMessageBuilderFactory;
 
     /**
      * The default reply channel (i.e used in case the requested did not include a reply channel header).
@@ -34,21 +34,22 @@ public class ExecutionResponseHandler {
 
 
     /**
-     * @param messageProducer                      The {@link MessageProducer} in charge of sending the {@link Message}.
-     * @param executionResultMessageBuilderFactory A {@link MessageBuilderFactory} of {@link ExecutionResponseDto}
-     *                                             that creates the
-     *                                             {@link com.bellotapps.the_messenger.producer.MessageBuilder}
-     *                                             that can create the response {@link Message}s.
-     * @param properties                           An instance of {@link ExecutionResponseHandlerProperties}
-     *                                             with values to configure this compoent.
+     * @param messageProducer                           The {@link MessageProducer}
+     *                                                  in charge of sending the {@link Message}.
+     * @param executionResponseDtoMessageBuilderFactory A {@link MessageBuilderFactory} of {@link ExecutionResponseDto}
+     *                                                  that creates the
+     *                                                  {@link com.bellotapps.the_messenger.producer.MessageBuilder}
+     *                                                  that can create the response {@link Message}s.
+     * @param properties                                An instance of {@link ExecutionResponseHandlerProperties}
+     *                                                  with values to configure this compoent.
      */
     @Autowired
     public ExecutionResponseHandler(
             final MessageProducer messageProducer,
-            final MessageBuilderFactory<ExecutionResponseDto> executionResultMessageBuilderFactory,
+            final MessageBuilderFactory<ExecutionResponseDto> executionResponseDtoMessageBuilderFactory,
             final ExecutionResponseHandlerProperties properties) {
         this.messageProducer = messageProducer;
-        this.executionResultMessageBuilderFactory = executionResultMessageBuilderFactory;
+        this.executionResponseDtoMessageBuilderFactory = executionResponseDtoMessageBuilderFactory;
         this.defaultReplyChannel = properties.getDefaultReplyChannel();
     }
 
@@ -56,15 +57,15 @@ public class ExecutionResponseHandler {
     /**
      * Sends the {@link ExecutionResponse} in response to the given {@code incomingMessage}.
      *
-     * @param incomingMessage The {@link Message} being responded.
-     * @param executionResult The {@link ExecutionResponse} to be sent to the requester.
+     * @param incomingMessage   The {@link Message} being responded.
+     * @param executionResponse The {@link ExecutionResponse} to be sent to the requester.
      */
-    public void sendExecutionResult(final Message incomingMessage, final ExecutionResponse executionResult) {
+    public void sendExecutionResponse(final Message incomingMessage, final ExecutionResponse executionResponse) {
         final var replyChannel = incomingMessage
                 .headerValue(Constants.REPLY_CHANNEL_HEADER)
                 .orElse(defaultReplyChannel);
-        final var message = executionResultMessageBuilderFactory.replyMessage(incomingMessage)
-                .withPayload(ExecutionResponseDto.build(executionResult))
+        final var message = executionResponseDtoMessageBuilderFactory.replyMessage(incomingMessage)
+                .withPayload(ExecutionResponseDto.buildFromResponse(executionResponse))
                 .build();
         messageProducer.send(message, replyChannel);
     }

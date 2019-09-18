@@ -26,6 +26,11 @@
         </dependency>
 
         <dependency>
+            <groupId>ar.edu.itba.cep</groupId>
+            <artifactId>commons-executor-dtos</artifactId>
+        </dependency>
+
+        <dependency>
             <groupId>com.bellotapps.the-messenger</groupId>
             <artifactId>commons</artifactId>
         </dependency>

@@ -1,7 +1,7 @@
 package ar.edu.itba.cep.executor_service.commands.config;
 
-import ar.edu.itba.cep.executor_service.commands.dto.ExecutionRequestDto;
-import ar.edu.itba.cep.executor_service.commands.dto.ExecutionResponseDto;
+import ar.edu.itba.cep.executor.dtos.ExecutionRequestDto;
+import ar.edu.itba.cep.executor.dtos.ExecutionResponseDto;
 import com.bellotapps.the_messenger.commons.Message;
 import com.bellotapps.the_messenger.commons.payload.PayloadDeserializer;
 import com.bellotapps.the_messenger.commons.payload.PayloadSerializer;

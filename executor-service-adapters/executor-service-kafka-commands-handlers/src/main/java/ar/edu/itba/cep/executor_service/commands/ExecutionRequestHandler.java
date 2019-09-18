@@ -1,7 +1,7 @@
 package ar.edu.itba.cep.executor_service.commands;
 
+import ar.edu.itba.cep.executor.dtos.ExecutionRequestDto;
 import ar.edu.itba.cep.executor.models.ExecutionRequest;
-import ar.edu.itba.cep.executor_service.commands.dto.ExecutionRequestDto;
 import ar.edu.itba.cep.executor_service.services.ExecutorService;
 import com.bellotapps.the_messenger.commons.Message;
 import com.bellotapps.the_messenger.commons.payload.PayloadDeserializer;
@@ -33,7 +33,7 @@ public class ExecutionRequestHandler extends DeserializerMessageHandler<Executio
      *
      * @param executionRequestDtoDeserializer A {@link PayloadDeserializer} of {@link ExecutionRequestDto}.
      * @param executorService                 The {@link ExecutorService} being adapted.
-     * @param executionResponseHandler          An {@link ExecutionRequestHandler}
+     * @param executionResponseHandler        An {@link ExecutionRequestHandler}
      *                                        in charge of returning results to the execution requester.
      */
     @Autowired
@@ -50,7 +50,7 @@ public class ExecutionRequestHandler extends DeserializerMessageHandler<Executio
 
     @Override
     protected void andThen(final ExecutionRequestDto executionRequestDto, final Message message) {
-        final var executionResult = executorService.processExecutionRequest(executionRequestDto.getExecutionRequest());
-        executionResponseHandler.sendExecutionResult(message, executionResult);
+        final var executionResponse = executorService.processExecutionRequest(executionRequestDto.getExecutionRequest());
+        executionResponseHandler.sendExecutionResponse(message, executionResponse);
     }
 }
