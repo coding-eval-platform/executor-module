@@ -135,11 +135,14 @@ function initialize_code {
 # ---
 # Compiles code.
 #
+# @param flags    ($1): The compiler flags.
 # @return 0 if any compiler error occurs, or any other value otherwise.
 # ---
 function compile_code {
-    # Here compile the code if necessary. For example:
-    # javac ./Main.java > /dev/null
+    local COMPILER_FLAGS=$1;
+
+    # Here compile the code if necessary, setting the compiler flags. For example:
+    # javac ${COMPILER_FLAGS} ./Main.java > /dev/null
     true # REMOVE!!!
 }
 
@@ -173,6 +176,10 @@ function run_code {
 # The code to be run.
 # ---
 declare CODE;
+# ---
+# The compiler flags (ignore if non-compiled language).
+# ---
+declare COMPILER_FLAGS;
 # ---
 # The timeout given to the program resulting from the givne code.
 # ---

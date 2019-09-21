@@ -161,6 +161,10 @@ function run_code {
 # ---
 declare CODE;
 # ---
+# The compiler flags (ignored as ruby is non-compiled).
+# ---
+declare COMPILER_FLAGS;
+# ---
 # The timeout given to the program resulting from the givne code.
 # ---
 declare TIMEOUT;

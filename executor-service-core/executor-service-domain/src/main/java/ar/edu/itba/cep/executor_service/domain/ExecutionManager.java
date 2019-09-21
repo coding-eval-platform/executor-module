@@ -1,7 +1,8 @@
 package ar.edu.itba.cep.executor_service.domain;
 
-import ar.edu.itba.cep.executor_service.models.ExecutionRequest;
-import ar.edu.itba.cep.executor_service.models.ExecutionResult;
+
+import ar.edu.itba.cep.executor.models.ExecutionRequest;
+import ar.edu.itba.cep.executor.models.ExecutionResponse;
 import ar.edu.itba.cep.executor_service.runner.CodeRunner;
 import ar.edu.itba.cep.executor_service.services.ExecutorService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,14 +21,14 @@ public class ExecutionManager implements ExecutorService {
 
 
     @Autowired
-    public ExecutionManager(
-            final CodeRunner codeRunner) {
+    public ExecutionManager(final CodeRunner codeRunner) {
         this.codeRunner = codeRunner;
     }
 
 
     @Override
-    public ExecutionResult processExecutionRequest(final ExecutionRequest executionRequest) throws IllegalArgumentException {
-        return codeRunner.processExecutionRequest(executionRequest); // TODO: route according to language
+    public ExecutionResponse processExecutionRequest(final ExecutionRequest executionRequest)
+            throws IllegalArgumentException {
+        return codeRunner.processExecutionRequest(executionRequest);
     }
 }

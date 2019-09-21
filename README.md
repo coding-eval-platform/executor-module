@@ -6,7 +6,7 @@ Service in charge of running code.
 ## Features
 
 - Compile (when needed) and run code
-- Notify execution result
+- Notify execution results
 
 ### Supported programming languages
 

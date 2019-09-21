@@ -19,11 +19,9 @@
     </properties>
 
     <dependencies>
-        <!-- Models -->
         <dependency>
-            <groupId>${project.parent.groupId}</groupId>
-            <artifactId>executor-service-models</artifactId>
-            <version>${project.parent.version}</version>
+            <groupId>ar.edu.itba.cep</groupId>
+            <artifactId>commons-executor-models</artifactId>
         </dependency>
     </dependencies>
 </project>

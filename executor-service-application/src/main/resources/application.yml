@@ -37,8 +37,8 @@ code-runner:
         c:      "c.sh"
 
 command-handler:
-    result-handler:
-        default-reply-channel: "ExecutorService-Execution-Results"
+    response-handler:
+        default-reply-channel: "ExecutorService-Execution-Responses"
 
 
 

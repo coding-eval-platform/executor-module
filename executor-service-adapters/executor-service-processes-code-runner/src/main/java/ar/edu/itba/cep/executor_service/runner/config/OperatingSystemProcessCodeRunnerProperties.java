@@ -1,6 +1,6 @@
 package ar.edu.itba.cep.executor_service.runner.config;
 
-import ar.edu.itba.cep.executor_service.models.Language;
+import ar.edu.itba.cep.executor.models.Language;
 import ar.edu.itba.cep.executor_service.runner.OperatingSystemProcessCodeRunner;
 import lombok.Getter;
 import lombok.Setter;
