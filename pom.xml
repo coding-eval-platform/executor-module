@@ -100,6 +100,27 @@
         </pluginManagement>
     </build>
 
+    <repositories>
+        <repository>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+            <id>bintray-coding-eval-platform-maven</id>
+            <name>bintray</name>
+            <url>https://dl.bintray.com/coding-eval-platform/maven</url>
+        </repository>
+    </repositories>
+    <pluginRepositories>
+        <pluginRepository>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+            <id>bintray-coding-eval-platform-maven</id>
+            <name>bintray-plugins</name>
+            <url>https://dl.bintray.com/coding-eval-platform/maven</url>
+        </pluginRepository>
+    </pluginRepositories>
+
     <licenses>
         <license>
             <name>The Apache License, Version 2.0</name>
