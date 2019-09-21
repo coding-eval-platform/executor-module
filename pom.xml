@@ -22,7 +22,7 @@
         <!-- Versions -->
         <com.bellotapps.the-messenger.version>0.0.1-RELEASE</com.bellotapps.the-messenger.version>
         <com.spotify.dockerfile-maven.version>1.4.10</com.spotify.dockerfile-maven.version>
-        <ar.edu.itba.cep.commons.version>0.0.4-SNAPSHOT</ar.edu.itba.cep.commons.version>
+        <ar.edu.itba.cep.commons.version>0.0.4-RELEASE</ar.edu.itba.cep.commons.version>
     </properties>
 
     <modules>
