@@ -27,7 +27,7 @@
 
         <dependency>
             <groupId>ar.edu.itba.cep</groupId>
-            <artifactId>commons-executor-dtos</artifactId>
+            <artifactId>commons-executor-shared</artifactId>
         </dependency>
 
         <dependency>

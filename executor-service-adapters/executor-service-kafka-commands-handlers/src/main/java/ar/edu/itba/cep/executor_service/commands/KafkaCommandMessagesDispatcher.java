@@ -1,6 +1,7 @@
 package ar.edu.itba.cep.executor_service.commands;
 
 
+import ar.edu.itba.cep.executor.Constants;
 import com.bellotapps.the_messenger.commons.Message;
 import com.bellotapps.the_messenger.consumer.BuiltInMessageHandler;
 import com.bellotapps.the_messenger.consumer.MessageHandler;
@@ -40,12 +41,7 @@ public class KafkaCommandMessagesDispatcher {
      *
      * @param message The received {@link Message}.
      */
-    @KafkaListener(
-            topics = {
-                    Constants.EXECUTION_REQUEST_CHANNEL,
-            },
-            autoStartup = "true"
-    )
+    @KafkaListener(topics = {Constants.EXECUTOR_SERVICE_COMMANDS_CHANNEL,}, autoStartup = "true")
     public void dispatch(final Message message) {
         this.dispatcherMessageHandler.handle(message);
     }
