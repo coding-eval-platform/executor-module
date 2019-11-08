@@ -122,29 +122,34 @@ function report_completed {
 # ---
 # Initializes execution stuff. This phase is mainly intended to create the file/s with the code to be run.
 #
-# @param code   ($1): The code to be run.
+# @param code           ($1): The code to be run.
+# @param main_file_name ($2): The name of the file where the code must be stored.
 # @return 0 if no error occurred while initializing stuff, or any other value otherwise.
 # ---
 function initialize_code {
     local CODE=$1
+    local MAIN_FILE_NAME=$2;
 
-    cat <<< "${CODE}" > ./main.rb # Store whatever the CODE variable has in a ruby.rb file in the current directory
+    # Store whatever the CODE variable has in a file with the name accortding to the variable in the current directory
+    cat <<< "${CODE}" > ./"${MAIN_FILE_NAME}"
 }
 
 # ---
 # Runs the code.
 #
-# @param timeout    ($1):       The timeout given to run.
-# @param args       ($2... $n): Arguments passed to the execution of the program.
+# @param timeout        ($1):       The timeout given to run.
+# @param main_file_name ($2):       The name of the file where the code is stored.
+# @param args           ($3... $n): Arguments passed to the execution of the program.
 # @return 0 if no error occurred while running the code, 124 if there is a timeout,
 # or any other value in case of errors.
 # ---
 function run_code {
     local TIMEOUT=$1
+    local MAIN_FILE_NAME=$2;
 
-    shift # Shift function arguments as the first one contains the timeout
+    shift 2 # Shift function arguments as the first one contains the timeout and the second one the main file name
 
-    timeout ${TIMEOUT} ruby main.rb "$@"
+    timeout ${TIMEOUT} ruby ./"${MAIN_FILE_NAME}" "$@"
 }
 
 
@@ -172,10 +177,21 @@ declare TIMEOUT;
 # The name of the file where the results will be stored.
 # ---
 declare RESULT_FILE_NAME;
+# ---
+# The name of the file where the code will be copied.
+# ---
+declare MAIN_FILE_NAME;
+
+
+# First set the file name
+if [[ ${MAIN_FILE_NAME} == "" ]];
+then
+      MAIN_FILE_NAME="main.rb";
+fi
 
 
 # Initialization
-initialize_code "${CODE}" || report_initialization_error $? "${RESULT_FILE_NAME}"
+initialize_code "${CODE}" "${MAIN_FILE_NAME}" || report_initialization_error $? "${RESULT_FILE_NAME}"
 
 # Execution
-run_code "${TIMEOUT}" "$@" && report_completed "${RESULT_FILE_NAME}" || report_failed $? "${RESULT_FILE_NAME}"
+run_code "${TIMEOUT}" "${MAIN_FILE_NAME}" "$@" && report_completed "${RESULT_FILE_NAME}" || report_failed $? "${RESULT_FILE_NAME}"

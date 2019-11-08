@@ -7,6 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.util.Assert;
+import org.springframework.util.StringUtils;
 
 import java.io.*;
 import java.nio.charset.Charset;
@@ -45,7 +46,10 @@ public class OperatingSystemProcessCodeRunner implements CodeRunner, Initializin
      * The name of the environment variable in which the result file name is set.
      */
     private final static String RESULT_FILE_NAME_ENV_VARIABLE = "RESULT_FILE_NAME";
-
+    /**
+     * The name of the environment variable in which the main file name is set.
+     */
+    private final static String MAIN_FILE_NAME_ENV_VARIABLE = "MAIN_FILE_NAME";;
     /**
      * The name for the file where the execution result must be stored.
      */
@@ -177,6 +181,10 @@ public class OperatingSystemProcessCodeRunner implements CodeRunner, Initializin
         environment.put(COMPILER_FLAGS_ENV_VARIABLE, Optional.ofNullable(request.getCompilerFlags()).orElse(""));
         environment.put(TIMEOUT_ENV_VARIABLE, Double.toString(executionTimeout / 1000d)); // TODO: BigDecimal?
         environment.put(RESULT_FILE_NAME_ENV_VARIABLE, RESULT_FILE_NAME);
+        environment.put(
+                MAIN_FILE_NAME_ENV_VARIABLE,
+                Optional.ofNullable(request.getMainFileName()).filter(StringUtils::hasText).orElse("")
+        );
 
         final var processTimeout = Math.max(executionTimeout, this.processTimeout) + GRACE_MARGIN;
         try {
