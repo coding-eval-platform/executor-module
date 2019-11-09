@@ -27,6 +27,8 @@ spring:
                     json:
                         add.type.headers: false
 
+server:
+    port: 8010
 
 code-runner:
     base-working-directory: /tmp/
