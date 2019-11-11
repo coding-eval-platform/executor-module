@@ -23,6 +23,7 @@
         <com.bellotapps.the-messenger.version>0.0.1-RELEASE</com.bellotapps.the-messenger.version>
         <com.spotify.dockerfile-maven.version>1.4.10</com.spotify.dockerfile-maven.version>
         <ar.edu.itba.cep.commons.version>0.0.7-RELEASE</ar.edu.itba.cep.commons.version>
+        <org.springframework.cloud.version>Greenwich.SR2</org.springframework.cloud.version>
     </properties>
 
     <modules>
@@ -33,6 +34,13 @@
 
     <dependencyManagement>
         <dependencies>
+            <dependency>
+                <groupId>org.springframework.cloud</groupId>
+                <artifactId>spring-cloud-dependencies</artifactId>
+                <version>${org.springframework.cloud.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
             <dependency>
                 <groupId>ar.edu.itba.cep</groupId>
                 <artifactId>commons-bom</artifactId>
